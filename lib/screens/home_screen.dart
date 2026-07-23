@@ -1,10 +1,39 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
 
-class HomeScreen extends StatelessWidget {
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:memory_lens/models/memory.dart';
+import 'package:memory_lens/providers/memory_provider.dart';
+import 'package:memory_lens/services/camera_service.dart';
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final CameraService _cameraService = CameraService();
+
+  Future<void> _captureMemory() async {
+    final File? image = await _cameraService.captureImage();
+
+    if (!mounted || image == null) return;
+
+    context.read<MemoryProvider>().addMemory(
+      Memory(
+        title: 'New Memory',
+        imagePath: image.path,
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final memories = context.watch<MemoryProvider>().memories;
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -12,11 +41,10 @@ class HomeScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               const SizedBox(height: 10),
 
               const Text(
-                "MemoryLens",
+                'MemoryLens',
                 style: TextStyle(
                   fontSize: 34,
                   fontWeight: FontWeight.bold,
@@ -26,19 +54,19 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 6),
 
               Text(
-                "Focus on what matters.",
+                'Focus on what matters.',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.grey.shade400,
+                  color: Colors.grey,
                 ),
               ),
 
               const SizedBox(height: 30),
 
-              TextField(
+              const TextField(
                 decoration: InputDecoration(
-                  hintText: "Search your memories...",
-                  prefixIcon: const Icon(Icons.search),
+                  hintText: 'Search your memories...',
+                  prefixIcon: Icon(Icons.search),
                 ),
               ),
 
@@ -48,80 +76,82 @@ class HomeScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 58,
                 child: ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: _captureMemory,
                   icon: const Icon(Icons.add_a_photo),
                   label: const Text(
-                    "Capture Memory",
+                    'Capture Memory',
                     style: TextStyle(fontSize: 18),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 30),
 
               const Text(
-                "Recent Memories",
+                'Recent Memories',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
 
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.key),
-                  title: const Text("Spare House Key"),
-                  subtitle: const Text("Garage cupboard"),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: memories.length,
+                  itemBuilder: (context, index) {
+                    final memory = memories[index];
+
+                    return Card(
+                      child: ListTile(
+                        leading: memory.imagePath != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(
+                                  File(memory.imagePath!),
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : const Icon(Icons.photo),
+
+                        title: Text(memory.title),
+
+                        subtitle: Text(
+                          memory.imagePath == null
+                              ? 'Tap Capture to add a photo'
+                              : 'Photo saved',
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
-
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.directions_car),
-                  title: const Text("Parked Car"),
-                  subtitle: const Text("Level 3 • Bay 27"),
-                ),
-              ),
-
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.book),
-                  title: const Text("Passport"),
-                  subtitle: const Text("Bedroom safe"),
-                ),
-              ),
-
-              const Spacer(),
 
               NavigationBar(
                 selectedIndex: 0,
                 destinations: const [
-
                   NavigationDestination(
                     icon: Icon(Icons.home),
-                    label: "Home",
+                    label: 'Home',
                   ),
-
                   NavigationDestination(
                     icon: Icon(Icons.search),
-                    label: "Search",
+                    label: 'Search',
                   ),
-
                   NavigationDestination(
                     icon: Icon(Icons.add_circle_outline),
-                    label: "Capture",
+                    label: 'Capture',
                   ),
-
                   NavigationDestination(
                     icon: Icon(Icons.history),
-                    label: "Timeline",
+                    label: 'Timeline',
                   ),
-
                   NavigationDestination(
                     icon: Icon(Icons.person),
-                    label: "Me",
+                    label: 'Me',
                   ),
                 ],
               ),
