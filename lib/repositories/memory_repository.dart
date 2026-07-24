@@ -5,15 +5,35 @@ class MemoryRepository {
 
   MemoryRepository(this.database);
 
+  // ---------------------------------------------------------------------------
+  // Read
+  // ---------------------------------------------------------------------------
+
   Future<List<Memory>> getAll() {
     return database.getAllMemories();
   }
 
-  Future<void> add(MemoriesCompanion memory) {
-    return database.addMemory(memory);
+  // ---------------------------------------------------------------------------
+  // Create
+  // ---------------------------------------------------------------------------
+
+  Future<void> add(MemoriesCompanion memory) async {
+    await database.addMemory(memory);
   }
 
-  Future<void> delete(int id) {
-    return database.deleteMemory(id);
+  // ---------------------------------------------------------------------------
+  // Update
+  // ---------------------------------------------------------------------------
+
+  Future<void> update(Memory memory) async {
+    await database.updateMemory(memory);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Delete
+  // ---------------------------------------------------------------------------
+
+  Future<void> delete(int id) async {
+    await database.deleteMemory(id);
   }
 }

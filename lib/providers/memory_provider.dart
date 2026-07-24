@@ -13,26 +13,49 @@ class MemoryProvider extends ChangeNotifier {
 
   List<Memory> get memories => _memories;
 
+  // ---------------------------------------------------------------------------
+  // Load
+  // ---------------------------------------------------------------------------
+
   Future<void> loadMemories() async {
     _memories = await repository.getAll();
     notifyListeners();
   }
 
+  // ---------------------------------------------------------------------------
+  // Create
+  // ---------------------------------------------------------------------------
+
   Future<void> addMemory({
     required String title,
     String? note,
     String? imagePath,
+    bool favourite = false,
   }) async {
     await repository.add(
       MemoriesCompanion.insert(
         title: title,
         note: Value(note),
         imagePath: Value(imagePath),
+        favourite: Value(favourite),
       ),
     );
 
     await loadMemories();
   }
+
+  // ---------------------------------------------------------------------------
+  // Update
+  // ---------------------------------------------------------------------------
+
+  Future<void> updateMemory(Memory memory) async {
+    await repository.update(memory);
+    await loadMemories();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Delete
+  // ---------------------------------------------------------------------------
 
   Future<void> deleteMemory(int id) async {
     await repository.delete(id);

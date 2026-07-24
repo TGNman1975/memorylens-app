@@ -16,16 +16,42 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 1;
 
+  // ---------------------------------------------------------------------------
+  // Create
+  // ---------------------------------------------------------------------------
+
   Future<int> addMemory(MemoriesCompanion memory) {
     return into(memories).insert(memory);
   }
 
+  // ---------------------------------------------------------------------------
+  // Read
+  // ---------------------------------------------------------------------------
+
   Future<List<Memory>> getAllMemories() {
-    return select(memories).get();
+    return (select(memories)
+          ..orderBy([
+            (t) => OrderingTerm.desc(t.createdAt),
+          ]))
+        .get();
   }
 
+  // ---------------------------------------------------------------------------
+  // Update
+  // ---------------------------------------------------------------------------
+
+  Future<bool> updateMemory(Memory memory) {
+    return update(memories).replace(memory);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Delete
+  // ---------------------------------------------------------------------------
+
   Future<void> deleteMemory(int id) {
-    return (delete(memories)..where((tbl) => tbl.id.equals(id))).go();
+    return (delete(memories)
+          ..where((tbl) => tbl.id.equals(id)))
+        .go();
   }
 }
 
