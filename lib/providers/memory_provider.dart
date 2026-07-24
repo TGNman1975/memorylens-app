@@ -1,18 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:drift/drift.dart';
 
-import '../models/memory.dart';
+import '../database/app_database.dart';
+import '../repositories/memory_repository.dart';
 
 class MemoryProvider extends ChangeNotifier {
-  final List<Memory> _memories = [
-    Memory(title: 'Spare House Key'),
-    Memory(title: 'Parked Car'),
-    Memory(title: 'Passport'),
-  ];
+  final MemoryRepository repository;
 
-  List<Memory> get memories => List.unmodifiable(_memories);
+  MemoryProvider(this.repository);
 
-  void addMemory(Memory memory) {
-    _memories.insert(0, memory);
+  List<Memory> _memories = [];
+
+  List<Memory> get memories => _memories;
+
+  Future<void> loadMemories() async {
+    _memories = await repository.getAll();
     notifyListeners();
+  }
+
+  Future<void> addMemory({
+    required String title,
+    String? note,
+    String? imagePath,
+  }) async {
+    await repository.add(
+      MemoriesCompanion.insert(
+        title: title,
+        note: Value(note),
+        imagePath: Value(imagePath),
+      ),
+    );
+
+    await loadMemories();
+  }
+
+  Future<void> deleteMemory(int id) async {
+    await repository.delete(id);
+    await loadMemories();
   }
 }
