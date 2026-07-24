@@ -1,13 +1,16 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import '../database/app_database.dart';
 
 class AddMemoryScreen extends StatefulWidget {
   final File image;
+  final Memory? memory;
 
   const AddMemoryScreen({
     super.key,
     required this.image,
+    this.memory,
   });
 
   @override
@@ -15,8 +18,25 @@ class AddMemoryScreen extends StatefulWidget {
 }
 
 class _AddMemoryScreenState extends State<AddMemoryScreen> {
-  final _titleController = TextEditingController();
-  final _noteController = TextEditingController();
+  late final TextEditingController _titleController;
+  late final TextEditingController _noteController;
+
+  bool _favourite = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _titleController = TextEditingController(
+      text: widget.memory?.title ?? "",
+    );
+
+    _noteController = TextEditingController(
+      text: widget.memory?.note ?? "",
+    );
+
+    _favourite = widget.memory?.favourite ?? false;
+  }
 
   @override
   void dispose() {
@@ -27,15 +47,16 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final editing = widget.memory != null;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("New Memory"),
+        title: Text(editing ? "Edit Memory" : "New Memory"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.file(
@@ -65,24 +86,29 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
               ),
             ),
 
+            const SizedBox(height: 12),
+
+            SwitchListTile(
+              value: _favourite,
+              title: const Text("Favourite"),
+              onChanged: (value) {
+                setState(() {
+                  _favourite = value;
+                });
+              },
+            ),
+
             const Spacer(),
 
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () {
-
-                  Navigator.pop(
-                    context,
-                    {
-                      "title": _titleController.text,
-                      "note": _noteController.text,
-                    },
-                  );
-
-                },
-                child: const Text("Save Memory"),
-              ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(context, {
+                  "title": _titleController.text.trim(),
+                  "note": _noteController.text.trim(),
+                  "favourite": _favourite,
+                });
+              },
+              child: Text(editing ? "Save Changes" : "Save Memory"),
             )
           ],
         ),
