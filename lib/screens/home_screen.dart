@@ -1,12 +1,10 @@
-
-
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../database/app_database.dart';
 import '../providers/memory_provider.dart';
 import '../services/camera_service.dart';
+import '../services/location_service.dart';
 import '../widgets/common/app_header.dart';
 import '../widgets/common/capture_button.dart';
 import '../widgets/common/section_title.dart';
@@ -24,6 +22,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final CameraService _camera = CameraService();
+  final LocationService _locationService = LocationService();
+
   String _query = '';
 
   @override
@@ -33,40 +33,79 @@ class _HomeScreenState extends State<HomeScreen> {
       context.read<MemoryProvider>().loadMemories();
     });
   }
-Future<void> _capture() async {
-  final file = await _camera.captureImage();
 
-  if (!mounted || file == null) return;
+  Future<void> _capture() async {
+    final file = await _camera.captureImage();
 
-  final provider = context.read<MemoryProvider>();
+    if (!mounted || file == null) return;
 
-  final saved = await Navigator.push<bool>(
-    context,
-    MaterialPageRoute(
-      builder: (_) => AddMemoryScreen(image: file),
-    ),
-  );
+    final provider = context.read<MemoryProvider>();
 
-  if (!mounted) return;
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddMemoryScreen(image: file),
+      ),
+    );
 
-  if (saved == true) {
-    await provider.loadMemories();
+    if (!mounted) return;
+
+    if (saved == true) {
+      await provider.loadMemories();
+    }
   }
-}
- 
+
+  Future<void> _testLocation() async {
+    try {
+      final position = await _locationService.getCurrentLocation();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Latitude: ${position.latitude}\n'
+            'Longitude: ${position.longitude}',
+          ),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<MemoryProvider>();
 
     final memories = provider.memories.where((m) {
       if (_query.isEmpty) return true;
+
       final q = _query.toLowerCase();
+
       return m.title.toLowerCase().contains(q) ||
           (m.note ?? '').toLowerCase().contains(q);
     }).toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('MemoryLens')),
+      appBar: AppBar(
+        title: const Text('MemoryLens'),
+        actions: [
+          IconButton(
+            tooltip: 'Test GPS',
+            icon: const Icon(Icons.my_location),
+            onPressed: _testLocation,
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -74,47 +113,65 @@ Future<void> _capture() async {
             children: [
               const AppHeader(),
               const SizedBox(height: 16),
+
               MemorySearchBar(
-                onChanged: (v) => setState(() => _query = v),
+                onChanged: (value) {
+                  setState(() {
+                    _query = value;
+                  });
+                },
               ),
+
               const SizedBox(height: 16),
-              CaptureButton(onPressed: _capture),
+
+              CaptureButton(
+                onPressed: _capture,
+              ),
+
               const SizedBox(height: 24),
-              SectionTitle(title: 'Memories'),
+
+              const SectionTitle(
+                title: 'Memories',
+              ),
+
               const SizedBox(height: 12),
+
               Expanded(
                 child: memories.isEmpty
-                    ? const Center(child: Text('No memories yet'))
+                    ? const Center(
+                        child: Text('No memories yet'),
+                      )
                     : ListView.builder(
                         itemCount: memories.length,
-                        itemBuilder: (_, i) {
-                          final Memory memory = memories[i];
+                        itemBuilder: (context, index) {
+                          final Memory memory = memories[index];
+
                           return MemoryCard(
-  memory: memory,
-  onTap: () async {
-    final updated = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => MemoryDetailScreen(
-          memory: memory,
-        ),
-      ),
-    );
+                            memory: memory,
+                            onTap: () async {
+                              final updated = await Navigator.push<bool>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => MemoryDetailScreen(
+                                    memory: memory,
+                                  ),
+                                ),
+                              );
 
-    if (!mounted) return;
+                              if (!mounted) return;
 
-    if (updated == true) {
-      await provider.loadMemories();
-    }
-  },
-  onDelete: () async {
-    await provider.deleteMemory(memory.id);
+                              if (updated == true) {
+                                await provider.loadMemories();
+                              }
+                            },
+                            onDelete: () async {
+                              await provider.deleteMemory(memory.id);
 
-    if (!mounted) return;
+                              if (!mounted) return;
 
-    await provider.loadMemories();
-  },
-);
+                              await provider.loadMemories();
+                            },
+                          );
                         },
                       ),
               ),
