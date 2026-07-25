@@ -1,8 +1,10 @@
 import 'dart:io';
-
+import 'add_memory_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../database/app_database.dart';
+import '../providers/memory_provider.dart';
 import '../utils/date_formatter.dart';
 
 class MemoryDetailScreen extends StatelessWidget {
@@ -32,7 +34,9 @@ class MemoryDetailScreen extends StatelessWidget {
                   )
                 : Container(
                     height: 300,
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .surfaceContainerHighest,
                     child: const Icon(
                       Icons.photo,
                       size: 100,
@@ -114,17 +118,71 @@ class MemoryDetailScreen extends StatelessWidget {
                 const SizedBox(height: 32),
 
                 FilledButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Edit Memory coming soon',
+  onPressed: () async {
+    if (memory.imagePath == null) return;
+
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddMemoryScreen(
+          image: File(memory.imagePath!),
+          memory: memory,
+        ),
+      ),
+    );
+
+    if (!context.mounted) return;
+
+    if (updated == true) {
+      Navigator.pop(context, true);
+    }
+  },
+  icon: const Icon(Icons.edit),
+  label: const Text("Edit Memory"),
+),
+
+                const SizedBox(height: 12),
+
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
+                  icon: const Icon(Icons.delete),
+                  label: const Text("Delete Memory"),
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (dialogContext) => AlertDialog(
+                        title: const Text("Delete Memory"),
+                        content: const Text(
+                          "Are you sure you want to permanently delete this memory?",
                         ),
+                        actions: [
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.pop(dialogContext, false),
+                            child: const Text("Cancel"),
+                          ),
+                          FilledButton(
+                            onPressed: () =>
+                                Navigator.pop(dialogContext, true),
+                            child: const Text("Delete"),
+                          ),
+                        ],
                       ),
                     );
-                  },
-                  icon: const Icon(Icons.edit),
-                  label: const Text("Edit Memory"),
+
+                    if (confirm != true) return;
+
+                    await context
+                        .read<MemoryProvider>()
+                        .deleteMemory(memory.id);
+
+                    if (!context.mounted) return;
+                      Navigator.pop(context, true);
+                    }
+              
                 ),
 
                 const SizedBox(height: 12),

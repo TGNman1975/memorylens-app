@@ -48,10 +48,21 @@ class MemoryProvider extends ChangeNotifier {
   // Update
   // ---------------------------------------------------------------------------
 
-  Future<void> updateMemory(Memory memory) async {
-    await repository.update(memory);
-    await loadMemories();
-  }
+  Future<void> updateMemory({
+  required Memory existing,
+  required String title,
+  String? note,
+  bool favourite = false,
+}) async {
+  final updated = existing.copyWith(
+    title: title,
+    note: Value(note),
+    favourite: favourite,
+  );
+
+  await repository.update(updated);
+  await loadMemories();
+}
 
   // ---------------------------------------------------------------------------
   // Delete
