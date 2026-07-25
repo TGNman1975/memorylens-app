@@ -1,11 +1,19 @@
-import 'dart:io';
+
+
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../utils/date_formatter.dart';
+
+import '../database/app_database.dart';
 import '../providers/memory_provider.dart';
-import '../screens/add_memory_screen.dart';
 import '../services/camera_service.dart';
+import '../widgets/common/app_header.dart';
+import '../widgets/common/capture_button.dart';
+import '../widgets/common/section_title.dart';
+import '../widgets/memory/memory_card.dart';
+import '../widgets/memory/memory_search_bar.dart';
+import 'add_memory_screen.dart';
+import 'memory_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,336 +23,91 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final CameraService _cameraService = CameraService();
-  String _searchText = "";
+  final CameraService _camera = CameraService();
+  String _query = '';
 
-  Future<void> _captureMemory() async {
-  final provider = context.read<MemoryProvider>();
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<MemoryProvider>().loadMemories();
+    });
+  }
 
-  final File? image = await _cameraService.captureImage();
+  Future<void> _capture() async {
+    final file = await _camera.captureImage();
+    if (!mounted) return;
+    if (!mounted || file == null) return;
 
-  if (!mounted || image == null) return;
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddMemoryScreen(image: file),
+      ),
+    );
 
-  final result = await Navigator.of(context).push<Map<String, dynamic>>(
-    MaterialPageRoute(
-      builder: (_) => AddMemoryScreen(image: image),
-    ),
-  );
+    if (result == null) return;
 
-  if (!mounted || result == null) return;
-
-  await provider.addMemory(
-    title: result["title"] ?? "Untitled",
-    note: result["note"],
-    imagePath: image.path,
-  );
-}
+    await context.read<MemoryProvider>().addMemory(
+          title: result['title'] as String,
+          note: result['note'] as String?,
+          favourite: result['favourite'] as bool? ?? false,
+          imagePath: file.path,
+        );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final memories = context.watch<MemoryProvider>().memories;
+    final provider = context.watch<MemoryProvider>();
 
-    final filteredMemories = memories.where((memory) {
-      final title = memory.title.toLowerCase();
-      final note = (memory.note ?? "").toLowerCase();
-
-      return title.contains(_searchText) ||
-          note.contains(_searchText);
+    final memories = provider.memories.where((m) {
+      if (_query.isEmpty) return true;
+      final q = _query.toLowerCase();
+      return m.title.toLowerCase().contains(q) ||
+          (m.note ?? '').toLowerCase().contains(q);
     }).toList();
+
     return Scaffold(
+      appBar: AppBar(title: const Text('MemoryLens')),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 10),
-
-              const Text(
-                "MemoryLens",
-                style: TextStyle(
-                  fontSize: 34,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 6),
-
-              const Text(
-                "Focus on what matters.",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              TextField(
-  decoration: const InputDecoration(
-    hintText: "Search your memories...",
-    prefixIcon: Icon(Icons.search),
-  ),
-  onChanged: (value) {
-    setState(() {
-      _searchText = value.toLowerCase();
-    });
-  },
-),
-
-              const SizedBox(height: 24),
-
-              SizedBox(
-                width: double.infinity,
-                height: 58,
-                child: ElevatedButton.icon(
-                  onPressed: _captureMemory,
-                  icon: const Icon(Icons.add_a_photo),
-                  label: const Text(
-                    "Capture Memory",
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              const Text(
-                "Recent Memories",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
+              const AppHeader(),
               const SizedBox(height: 16),
-
+              MemorySearchBar(
+                onChanged: (v) => setState(() => _query = v),
+              ),
+              const SizedBox(height: 16),
+              CaptureButton(onPressed: _capture),
+              const SizedBox(height: 24),
+              SectionTitle(title: 'Memories'),
+              const SizedBox(height: 12),
               Expanded(
                 child: memories.isEmpty
-                    ? const Center(
-                        child: Text(
-                          "No memories yet.\nTap Capture Memory to get started.",
-                          textAlign: TextAlign.center,
-                        ),
-                      )
+                    ? const Center(child: Text('No memories yet'))
                     : ListView.builder(
-                        itemCount: filteredMemories.length,
-                        itemBuilder: (context, index) {
-                          final memory = filteredMemories[index];
-
-                          return Dismissible(
-  key: ValueKey(memory.id),
-  direction: DismissDirection.endToStart,
-
-  background: Container(
-    margin: const EdgeInsets.only(bottom: 12),
-    decoration: BoxDecoration(
-      color: Colors.red,
-      borderRadius: BorderRadius.circular(12),
-    ),
-    alignment: Alignment.centerRight,
-    padding: const EdgeInsets.only(right: 24),
-    child: const Icon(
-      Icons.delete,
-      color: Colors.white,
-    ),
-  ),
-
-  confirmDismiss: (_) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text("Delete Memory"),
-            content: const Text(
-              "Are you sure you want to delete this memory?",
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text("Cancel"),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text("Delete"),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  },
-
-  onDismissed: (_) {
-    context.read<MemoryProvider>().deleteMemory(memory.id);
-  },
-
-  child: Card(
-    margin: const EdgeInsets.only(bottom: 12),
-    child: ListTile(
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => MemoryDetailScreen(
-          memory: memory,
-        ),
-      ),
-    );
-  },
-
-  contentPadding: const EdgeInsets.all(12),
-
-  leading: ...
-
-  title: ...
-
-  subtitle: ...
-)
-      contentPadding: const EdgeInsets.all(12),
-
-      leading: memory.imagePath != null
-          ? ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.file(
-                File(memory.imagePath!),
-                width: 60,
-                height: 60,
-                fit: BoxFit.cover,
-              ),
-            )
-          : const Icon(Icons.photo, size: 40),
-
-      title: Row(
-        children: [
-          Expanded(
-            child: Text(
-              memory.title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          if (memory.favourite)
-            const Icon(
-              Icons.star,
-              color: Colors.amber,
-            ),
-        ],
-      ),
-
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 6),
-
-          if ((memory.note ?? "").isNotEmpty)
-            Text(memory.note!),
-
-          const SizedBox(height: 6),
-
-          Text(
-            DateFormatter.format(memory.createdAt),
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-            ),
-          )
-        ],
-      ),
-    ),
-  ),
-);
-
-  onDismissed: (_) {
-    context.read<MemoryProvider>().deleteMemory(memory.id);
-  },
-
-  child: Card(
-    margin: const EdgeInsets.only(bottom: 12),
-    child: ListTile(
-            ),
-    ),
-  );
-                              contentPadding: const EdgeInsets.all(12),
-
-                              leading: memory.imagePath != null
-                                  ? ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Image.file(
-                                        File(memory.imagePath!),
-                                        width: 60,
-                                        height: 60,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    )
-                                  : const Icon(Icons.photo, size: 40),
-
-                              title: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      memory.title,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  if (memory.favourite)
-                                    const Icon(
-                                      Icons.star,
-                                      color: Colors.amber,
-                                    ),
-                                ],
-                              ),
-
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 6),
-
-                                  if ((memory.note ?? "").isNotEmpty)
-                                    Text(memory.note!),
-
-                                  const SizedBox(height: 6),
-
-                                  Text(
-                                    memory.createdAt.toString(),
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                        itemCount: memories.length,
+                        itemBuilder: (_, i) {
+                          final Memory memory = memories[i];
+                          return MemoryCard(
+                            memory: memory,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      MemoryDetailScreen(memory: memory),
+                                ),
+                              );
+                            },
+                            onDelete: () {
+                              provider.deleteMemory(memory.id);
+                            },
                           );
                         },
                       ),
-              ),
-
-              NavigationBar(
-                selectedIndex: 0,
-                destinations: const [
-                  NavigationDestination(
-                    icon: Icon(Icons.home),
-                    label: "Home",
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.search),
-                    label: "Search",
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.add_circle_outline),
-                    label: "Capture",
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.history),
-                    label: "Timeline",
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.person),
-                    label: "Me",
-                  ),
-                ],
               ),
             ],
           ),
