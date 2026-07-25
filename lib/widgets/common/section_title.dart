@@ -31,14 +31,14 @@ class SectionTitle extends StatelessWidget {
 
     return Row(
       children: [
-        Expanded(
-          child: Text(
-            title,
-            style: theme.textTheme.titleLarge,
-          ),
-        ),
-        if (action != null) action!,
-      ],
+  Expanded(
+    child: Text(
+      title,
+      style: theme.textTheme.titleLarge,
+    ),
+  ),
+  if (action != null) action!,
+],
     );
   }
 }

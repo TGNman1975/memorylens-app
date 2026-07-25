@@ -35,26 +35,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _capture() async {
-    final file = await _camera.captureImage();
-    if (!mounted) return;
-    if (!mounted || file == null) return;
+  final file = await _camera.captureImage();
 
-    final result = await Navigator.push<Map<String, dynamic>>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AddMemoryScreen(image: file),
-      ),
-    );
+  if (!mounted || file == null) return;
 
-    if (result == null) return;
+  final saved = await Navigator.push<bool>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => AddMemoryScreen(image: file),
+    ),
+  );
 
-    await context.read<MemoryProvider>().addMemory(
-          title: result['title'] as String,
-          note: result['note'] as String?,
-          favourite: result['favourite'] as bool? ?? false,
-          imagePath: file.path,
-        );
+  if (!mounted) return;
+
+  if (saved == true) {
+    await context.read<MemoryProvider>().loadMemories();
   }
+
+    );
 
   @override
   Widget build(BuildContext context) {
@@ -93,13 +91,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           final Memory memory = memories[i];
                           return MemoryCard(
                             memory: memory,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      MemoryDetailScreen(memory: memory),
-                                ),
+                            onTap: () async {
+  final updated = await Navigator.push<bool>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => MemoryDetailScreen(
+        memory: memory,
+      ),
+    ),
+  );
+
+  if (!mounted) return;
+
+  if (updated == true) {
+    await provider.loadMemories();
+  }
+},
                               );
                             },
                             onDelete: () {
