@@ -33,11 +33,12 @@ class _HomeScreenState extends State<HomeScreen> {
       context.read<MemoryProvider>().loadMemories();
     });
   }
-
-  Future<void> _capture() async {
+Future<void> _capture() async {
   final file = await _camera.captureImage();
 
   if (!mounted || file == null) return;
+
+  final provider = context.read<MemoryProvider>();
 
   final saved = await Navigator.push<bool>(
     context,
@@ -49,11 +50,10 @@ class _HomeScreenState extends State<HomeScreen> {
   if (!mounted) return;
 
   if (saved == true) {
-    await context.read<MemoryProvider>().loadMemories();
+    await provider.loadMemories();
   }
-
-    );
-
+}
+ 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<MemoryProvider>();
@@ -90,29 +90,31 @@ class _HomeScreenState extends State<HomeScreen> {
                         itemBuilder: (_, i) {
                           final Memory memory = memories[i];
                           return MemoryCard(
-                            memory: memory,
-                            onTap: () async {
-  final updated = await Navigator.push<bool>(
-    context,
-    MaterialPageRoute(
-      builder: (_) => MemoryDetailScreen(
-        memory: memory,
+  memory: memory,
+  onTap: () async {
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MemoryDetailScreen(
+          memory: memory,
+        ),
       ),
-    ),
-  );
+    );
 
-  if (!mounted) return;
+    if (!mounted) return;
 
-  if (updated == true) {
+    if (updated == true) {
+      await provider.loadMemories();
+    }
+  },
+  onDelete: () async {
+    await provider.deleteMemory(memory.id);
+
+    if (!mounted) return;
+
     await provider.loadMemories();
-  }
-},
-                              );
-                            },
-                            onDelete: () {
-                              provider.deleteMemory(memory.id);
-                            },
-                          );
+  },
+);
                         },
                       ),
               ),
