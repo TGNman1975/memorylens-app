@@ -49,7 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       onChoosePhoto: () {
         Navigator.pop(context);
-        _capture();
+        _showPhotoSourceSheet();
       },
       onQuickNote: () {
         Navigator.pop(context);
@@ -69,9 +69,9 @@ Future<void> _showPhotoSourceSheet() async {
         _capture();
       },
       onGallery: () {
-        Navigator.pop(context);
-        _capture();
-      },
+  Navigator.pop(context);
+  _capture();
+},
     ),
   );
 }

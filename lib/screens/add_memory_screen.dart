@@ -14,10 +14,10 @@ class AddMemoryScreen extends StatefulWidget {
   final Memory? memory;
 
   const AddMemoryScreen({
-    super.key,
-    required this.image,
-    this.memory,
-  });
+  super.key,
+  required this.image,
+  this.memory,
+});
 
   @override
   State<AddMemoryScreen> createState() => _AddMemoryScreenState();
