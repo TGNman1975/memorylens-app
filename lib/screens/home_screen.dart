@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'quick_note_screen.dart';
-
+import '../services/gallery_service.dart';
 import '../providers/memory_provider.dart';
 import '../services/camera_service.dart';
 import '../services/location_service.dart';
@@ -68,9 +68,25 @@ Future<void> _showPhotoSourceSheet() async {
         Navigator.pop(context);
         _capture();
       },
-      onGallery: () {
+      onGallery: () async {
   Navigator.pop(context);
-  _capture();
+
+  final image = await GalleryService.pickImage();
+
+  if (!mounted || image == null) return;
+
+  final result = await Navigator.push<bool>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => AddMemoryScreen(
+        image: image,
+      ),
+    ),
+  );
+
+  if (result == true && mounted) {
+    await context.read<MemoryProvider>().loadMemories();
+  }
 },
     ),
   );
