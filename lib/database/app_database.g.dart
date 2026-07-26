@@ -99,6 +99,17 @@ class $MemoriesTable extends Memories with TableInfo<$MemoriesTable, Memory> {
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -109,6 +120,7 @@ class $MemoriesTable extends Memories with TableInfo<$MemoriesTable, Memory> {
     longitude,
     favourite,
     createdAt,
+    updatedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -169,6 +181,12 @@ class $MemoriesTable extends Memories with TableInfo<$MemoriesTable, Memory> {
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
     return context;
   }
 
@@ -210,6 +228,10 @@ class $MemoriesTable extends Memories with TableInfo<$MemoriesTable, Memory> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      ),
     );
   }
 
@@ -228,6 +250,7 @@ class Memory extends DataClass implements Insertable<Memory> {
   final double? longitude;
   final bool favourite;
   final DateTime createdAt;
+  final DateTime? updatedAt;
   const Memory({
     required this.id,
     required this.title,
@@ -237,6 +260,7 @@ class Memory extends DataClass implements Insertable<Memory> {
     this.longitude,
     required this.favourite,
     required this.createdAt,
+    this.updatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -257,6 +281,9 @@ class Memory extends DataClass implements Insertable<Memory> {
     }
     map['favourite'] = Variable<bool>(favourite);
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || updatedAt != null) {
+      map['updated_at'] = Variable<DateTime>(updatedAt);
+    }
     return map;
   }
 
@@ -276,6 +303,9 @@ class Memory extends DataClass implements Insertable<Memory> {
           : Value(longitude),
       favourite: Value(favourite),
       createdAt: Value(createdAt),
+      updatedAt: updatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAt),
     );
   }
 
@@ -293,6 +323,7 @@ class Memory extends DataClass implements Insertable<Memory> {
       longitude: serializer.fromJson<double?>(json['longitude']),
       favourite: serializer.fromJson<bool>(json['favourite']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
     );
   }
   @override
@@ -307,6 +338,7 @@ class Memory extends DataClass implements Insertable<Memory> {
       'longitude': serializer.toJson<double?>(longitude),
       'favourite': serializer.toJson<bool>(favourite),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime?>(updatedAt),
     };
   }
 
@@ -319,6 +351,7 @@ class Memory extends DataClass implements Insertable<Memory> {
     Value<double?> longitude = const Value.absent(),
     bool? favourite,
     DateTime? createdAt,
+    Value<DateTime?> updatedAt = const Value.absent(),
   }) => Memory(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -328,6 +361,7 @@ class Memory extends DataClass implements Insertable<Memory> {
     longitude: longitude.present ? longitude.value : this.longitude,
     favourite: favourite ?? this.favourite,
     createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
   );
   Memory copyWithCompanion(MemoriesCompanion data) {
     return Memory(
@@ -339,6 +373,7 @@ class Memory extends DataClass implements Insertable<Memory> {
       longitude: data.longitude.present ? data.longitude.value : this.longitude,
       favourite: data.favourite.present ? data.favourite.value : this.favourite,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
 
@@ -352,7 +387,8 @@ class Memory extends DataClass implements Insertable<Memory> {
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
           ..write('favourite: $favourite, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
   }
@@ -367,6 +403,7 @@ class Memory extends DataClass implements Insertable<Memory> {
     longitude,
     favourite,
     createdAt,
+    updatedAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -379,7 +416,8 @@ class Memory extends DataClass implements Insertable<Memory> {
           other.latitude == this.latitude &&
           other.longitude == this.longitude &&
           other.favourite == this.favourite &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
 }
 
 class MemoriesCompanion extends UpdateCompanion<Memory> {
@@ -391,6 +429,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
   final Value<double?> longitude;
   final Value<bool> favourite;
   final Value<DateTime> createdAt;
+  final Value<DateTime?> updatedAt;
   const MemoriesCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -400,6 +439,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
     this.longitude = const Value.absent(),
     this.favourite = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
   });
   MemoriesCompanion.insert({
     this.id = const Value.absent(),
@@ -410,6 +450,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
     this.longitude = const Value.absent(),
     this.favourite = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
   }) : title = Value(title);
   static Insertable<Memory> custom({
     Expression<int>? id,
@@ -420,6 +461,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
     Expression<double>? longitude,
     Expression<bool>? favourite,
     Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -430,6 +472,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
       if (longitude != null) 'longitude': longitude,
       if (favourite != null) 'favourite': favourite,
       if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
     });
   }
 
@@ -442,6 +485,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
     Value<double?>? longitude,
     Value<bool>? favourite,
     Value<DateTime>? createdAt,
+    Value<DateTime?>? updatedAt,
   }) {
     return MemoriesCompanion(
       id: id ?? this.id,
@@ -452,6 +496,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
       longitude: longitude ?? this.longitude,
       favourite: favourite ?? this.favourite,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
@@ -482,6 +527,9 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
     return map;
   }
 
@@ -495,7 +543,8 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
           ..write('favourite: $favourite, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
   }
@@ -522,6 +571,7 @@ typedef $$MemoriesTableCreateCompanionBuilder =
       Value<double?> longitude,
       Value<bool> favourite,
       Value<DateTime> createdAt,
+      Value<DateTime?> updatedAt,
     });
 typedef $$MemoriesTableUpdateCompanionBuilder =
     MemoriesCompanion Function({
@@ -533,6 +583,7 @@ typedef $$MemoriesTableUpdateCompanionBuilder =
       Value<double?> longitude,
       Value<bool> favourite,
       Value<DateTime> createdAt,
+      Value<DateTime?> updatedAt,
     });
 
 class $$MemoriesTableFilterComposer
@@ -581,6 +632,11 @@ class $$MemoriesTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -633,6 +689,11 @@ class $$MemoriesTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$MemoriesTableAnnotationComposer
@@ -667,6 +728,9 @@ class $$MemoriesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 }
 
 class $$MemoriesTableTableManager
@@ -705,6 +769,7 @@ class $$MemoriesTableTableManager
                 Value<double?> longitude = const Value.absent(),
                 Value<bool> favourite = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> updatedAt = const Value.absent(),
               }) => MemoriesCompanion(
                 id: id,
                 title: title,
@@ -714,6 +779,7 @@ class $$MemoriesTableTableManager
                 longitude: longitude,
                 favourite: favourite,
                 createdAt: createdAt,
+                updatedAt: updatedAt,
               ),
           createCompanionCallback:
               ({
@@ -725,6 +791,7 @@ class $$MemoriesTableTableManager
                 Value<double?> longitude = const Value.absent(),
                 Value<bool> favourite = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> updatedAt = const Value.absent(),
               }) => MemoriesCompanion.insert(
                 id: id,
                 title: title,
@@ -734,6 +801,7 @@ class $$MemoriesTableTableManager
                 longitude: longitude,
                 favourite: favourite,
                 createdAt: createdAt,
+                updatedAt: updatedAt,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
