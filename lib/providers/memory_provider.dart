@@ -27,22 +27,26 @@ class MemoryProvider extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   Future<void> addMemory({
-    required String title,
-    String? note,
-    String? imagePath,
-    bool favourite = false,
-  }) async {
-    await repository.add(
-      MemoriesCompanion.insert(
-        title: title,
-        note: Value(note),
-        imagePath: Value(imagePath),
-        favourite: Value(favourite),
-      ),
-    );
+  required String title,
+  String? note,
+  String? imagePath,
+  double? latitude,
+  double? longitude,
+  bool favourite = false,
+}) async {
+  await repository.add(
+    MemoriesCompanion.insert(
+      title: title,
+      note: Value(note),
+      imagePath: Value(imagePath),
+      latitude: Value(latitude),
+      longitude: Value(longitude),
+      favourite: Value(favourite),
+    ),
+  );
 
-    await loadMemories();
-  }
+  await loadMemories();
+}
 
   // ---------------------------------------------------------------------------
   // Update
