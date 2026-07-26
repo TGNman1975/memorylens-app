@@ -10,12 +10,12 @@ import '../providers/memory_provider.dart';
 import '../services/location_service.dart';
 
 class AddMemoryScreen extends StatefulWidget {
-  final File image;
+  final File? image;
   final Memory? memory;
 
   const AddMemoryScreen({
   super.key,
-  required this.image,
+  this.image,
   this.memory,
 });
 
@@ -122,7 +122,7 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
     await provider.addMemory(
       title: title,
       note: note.isEmpty ? null : note,
-      imagePath: widget.image.path,
+      imagePath: widget.image?.path,
       latitude: _latitude,
       longitude: _longitude,
       favourite: _favourite,
@@ -147,15 +147,16 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.file(
-                  widget.image,
-                  width: double.infinity,
-                  height: 220,
-                  fit: BoxFit.cover,
-                ),
-              ),
+              if (widget.image != null)
+  ClipRRect(
+    borderRadius: BorderRadius.circular(12),
+    child: Image.file(
+      widget.image!,
+      width: double.infinity,
+      height: 220,
+      fit: BoxFit.cover,
+    ),
+  ),
 
               const SizedBox(height: 20),
 
