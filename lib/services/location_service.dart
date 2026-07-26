@@ -26,9 +26,11 @@ class LocationService {
     }
 
     return await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-      ),
-    );
+  locationSettings: const LocationSettings(
+    accuracy: LocationAccuracy.medium,
+  ),
+).timeout(
+  const Duration(seconds: 5),
+);
   }
 }

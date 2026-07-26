@@ -2,12 +2,31 @@ import 'dart:io';
 import 'add_memory_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'package:url_launcher/url_launcher.dart';
 import '../database/app_database.dart';
 import '../providers/memory_provider.dart';
 import '../utils/date_formatter.dart';
 
 class MemoryDetailScreen extends StatelessWidget {
+  Future<void> _openGoogleMaps(
+  BuildContext context,
+  double latitude,
+  double longitude,
+) async {
+  final uri = Uri.parse(
+    'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude',
+  );
+
+  if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Unable to open Google Maps'),
+      ),
+    );
+  }
+}
   final Memory memory;
 
   const MemoryDetailScreen({
@@ -114,6 +133,45 @@ class MemoryDetailScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (memory.latitude != null && memory.longitude != null) ...[
+  const SizedBox(height: 24),
+
+  Text(
+    "Location",
+    style: Theme.of(context).textTheme.titleSmall,
+  ),
+
+  const SizedBox(height: 8),
+
+  Card(
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Latitude: ${memory.latitude}",
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "Longitude: ${memory.longitude}",
+          ),
+          const SizedBox(height: 16),
+
+          FilledButton.icon(
+            onPressed: () => _openGoogleMaps(
+              context,
+              memory.latitude!,
+              memory.longitude!,
+            ),
+            icon: const Icon(Icons.map),
+            label: const Text("Open in Google Maps"),
+          ),
+        ],
+      ),
+    ),
+  ),
+],
 
                 const SizedBox(height: 32),
 

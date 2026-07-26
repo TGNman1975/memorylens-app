@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'quick_note_screen.dart';
 import '../database/app_database.dart';
 import '../providers/memory_provider.dart';
 import '../services/camera_service.dart';
@@ -12,6 +12,11 @@ import '../widgets/memory/memory_card.dart';
 import '../widgets/memory/memory_search_bar.dart';
 import 'add_memory_screen.dart';
 import 'memory_detail_screen.dart';
+import '../widgets/home/new_memory_button.dart';
+import '../widgets/home/new_memory_bottom_sheet.dart';
+import '../widgets/home/photo_source_sheet.dart';
+import '../widgets/home/home_memory_list.dart';
+import '../widgets/home/home_body.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,6 +38,43 @@ class _HomeScreenState extends State<HomeScreen> {
       context.read<MemoryProvider>().loadMemories();
     });
   }
+  Future<void> _showNewMemorySheet() async {
+  showModalBottomSheet(
+    context: context,
+    showDragHandle: true,
+    builder: (_) => NewMemoryBottomSheet(
+      onTakePhoto: () {
+        Navigator.pop(context);
+        _showPhotoSourceSheet();
+      },
+      onChoosePhoto: () {
+        Navigator.pop(context);
+        _capture();
+      },
+      onQuickNote: () {
+        Navigator.pop(context);
+        _quickNote();
+      },
+    ),
+  );
+}
+
+Future<void> _showPhotoSourceSheet() async {
+  showModalBottomSheet(
+    context: context,
+    showDragHandle: true,
+    builder: (_) => PhotoSourceSheet(
+      onCamera: () {
+        Navigator.pop(context);
+        _capture();
+      },
+      onGallery: () {
+        Navigator.pop(context);
+        _capture();
+      },
+    ),
+  );
+}
 
   Future<void> _capture() async {
     final file = await _camera.captureImage();
@@ -54,6 +96,15 @@ class _HomeScreenState extends State<HomeScreen> {
       await provider.loadMemories();
     }
   }
+
+  Future<void> _quickNote() async {
+  await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const QuickNoteScreen(),
+    ),
+  );
+}
 
   Future<void> _testLocation() async {
     try {
@@ -124,9 +175,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 16),
 
-              CaptureButton(
-                onPressed: _capture,
-              ),
+              NewMemoryButton(
+  onPressed: _showNewMemorySheet,
+),
 
               const SizedBox(height: 24),
 
@@ -137,44 +188,33 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 12),
 
               Expanded(
-                child: memories.isEmpty
-                    ? const Center(
-                        child: Text('No memories yet'),
-                      )
-                    : ListView.builder(
-                        itemCount: memories.length,
-                        itemBuilder: (context, index) {
-                          final Memory memory = memories[index];
+  child: HomeMemoryList(
+    memories: memories,
+    onTap: (memory) async {
+      final updated = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MemoryDetailScreen(
+            memory: memory,
+          ),
+        ),
+      );
 
-                          return MemoryCard(
-                            memory: memory,
-                            onTap: () async {
-                              final updated = await Navigator.push<bool>(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => MemoryDetailScreen(
-                                    memory: memory,
-                                  ),
-                                ),
-                              );
+      if (!mounted) return;
 
-                              if (!mounted) return;
+      if (updated == true) {
+        await provider.loadMemories();
+      }
+    },
+    onDelete: (memory) async {
+      await provider.deleteMemory(memory.id);
 
-                              if (updated == true) {
-                                await provider.loadMemories();
-                              }
-                            },
-                            onDelete: () async {
-                              await provider.deleteMemory(memory.id);
+      if (!mounted) return;
 
-                              if (!mounted) return;
-
-                              await provider.loadMemories();
-                            },
-                          );
-                        },
-                      ),
-              ),
+      await provider.loadMemories();
+    },
+  ),
+),
             ],
           ),
         ),

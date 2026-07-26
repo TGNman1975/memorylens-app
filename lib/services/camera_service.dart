@@ -7,7 +7,7 @@ class CameraService {
 
   Future<File?> captureImage() async {
     final XFile? image = await _picker.pickImage(
-      source: ImageSource.camera,
+      source: ImageSource.gallery,
       imageQuality: 85,
     );
 

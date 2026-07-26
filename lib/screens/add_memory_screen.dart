@@ -202,6 +202,17 @@ Row(
               ? Icons.location_on
               : Icons.location_off),
     ),
+    const SizedBox(height: 8),
+
+Text(
+  'Latitude: ${_latitude?.toStringAsFixed(6) ?? "null"}',
+  style: const TextStyle(fontSize: 12),
+),
+
+Text(
+  'Longitude: ${_longitude?.toStringAsFixed(6) ?? "null"}',
+  style: const TextStyle(fontSize: 12),
+),
     const SizedBox(width: 8),
     Expanded(
       child: Text(
