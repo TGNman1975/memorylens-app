@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'quick_note_screen.dart';
-import '../database/app_database.dart';
+
 import '../providers/memory_provider.dart';
 import '../services/camera_service.dart';
 import '../services/location_service.dart';
 import '../widgets/common/app_header.dart';
-import '../widgets/common/capture_button.dart';
+
 import '../widgets/common/section_title.dart';
-import '../widgets/memory/memory_card.dart';
+
 import '../widgets/memory/memory_search_bar.dart';
 import 'add_memory_screen.dart';
 import 'memory_detail_screen.dart';
@@ -16,7 +16,7 @@ import '../widgets/home/new_memory_button.dart';
 import '../widgets/home/new_memory_bottom_sheet.dart';
 import '../widgets/home/photo_source_sheet.dart';
 import '../widgets/home/home_memory_list.dart';
-import '../widgets/home/home_body.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -208,10 +208,6 @@ Future<void> _showPhotoSourceSheet() async {
     },
     onDelete: (memory) async {
       await provider.deleteMemory(memory.id);
-
-      if (!mounted) return;
-
-      await provider.loadMemories();
     },
   ),
 ),
