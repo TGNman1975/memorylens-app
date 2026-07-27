@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/memory_provider.dart';
+
+
 
 class QuickNoteScreen extends StatefulWidget {
   const QuickNoteScreen({super.key});
@@ -20,13 +25,23 @@ class _QuickNoteScreenState extends State<QuickNoteScreen> {
     super.dispose();
   }
 
-  void _save() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Quick Note save coming next'),
-      ),
-    );
-  }
+  Future<void> _save() async {
+  final title = _titleController.text.trim();
+
+  if (title.isEmpty) return;
+
+  await context.read<MemoryProvider>().addMemory(
+    title: title,
+    note: _noteController.text.trim().isEmpty
+        ? null
+        : _noteController.text.trim(),
+    favourite: _favourite,
+  );
+
+  if (!mounted) return;
+
+  Navigator.pop(context, true);
+}
 
   @override
   Widget build(BuildContext context) {

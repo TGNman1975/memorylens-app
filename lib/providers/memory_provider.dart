@@ -12,7 +12,21 @@ class MemoryProvider extends ChangeNotifier {
   List<Memory> _memories = [];
 
   List<Memory> get memories => _memories;
+    int get totalMemories => _memories.length;
 
+int get favouriteCount =>
+    _memories.where((m) => m.favourite).length;
+
+int get photoCount =>
+    _memories.where((m) => m.imagePath != null).length;
+
+int get quickNoteCount =>
+    _memories.where((m) => m.imagePath == null).length;
+
+int get locationCount =>
+    _memories.where(
+      (m) => m.latitude != null && m.longitude != null,
+    ).length;
   // ---------------------------------------------------------------------------
   // Load
   // ---------------------------------------------------------------------------

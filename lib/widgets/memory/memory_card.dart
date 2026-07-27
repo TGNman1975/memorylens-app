@@ -146,7 +146,13 @@ class MemoryCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           color: Colors.grey.shade800,
         ),
-        child: const Icon(Icons.photo, size: 32),
+        child: Icon(
+  memory.imagePath == null
+      ? Icons.sticky_note_2_outlined
+      : Icons.photo,
+  size: 32,
+  color: Colors.white70,
+),
       );
     }
 

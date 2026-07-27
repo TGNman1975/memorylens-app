@@ -6,7 +6,7 @@ import '../providers/memory_provider.dart';
 import '../services/camera_service.dart';
 import '../services/location_service.dart';
 import '../widgets/common/app_header.dart';
-
+import '../widgets/home/memory_stats_card.dart';
 import '../widgets/common/section_title.dart';
 
 import '../widgets/memory/memory_search_bar.dart';
@@ -113,13 +113,19 @@ Future<void> _showPhotoSourceSheet() async {
     }
   }
 
-  Future<void> _quickNote() async {
-  await Navigator.push(
+ Future<void> _quickNote() async {
+  final saved = await Navigator.push<bool>(
     context,
     MaterialPageRoute(
       builder: (_) => const QuickNoteScreen(),
     ),
   );
+
+  if (!mounted) return;
+
+  if (saved == true) {
+    await context.read<MemoryProvider>().loadMemories();
+  }
 }
 
   Future<void> _testLocation() async {
@@ -190,7 +196,27 @@ Future<void> _showPhotoSourceSheet() async {
               ),
 
               const SizedBox(height: 16),
+              Row(
+  children: [
+    MemoryStatsCard(
+      label: 'Photos',
+      value: provider.photoCount,
+      icon: Icons.photo,
+    ),
+    MemoryStatsCard(
+      label: 'Notes',
+      value: provider.quickNoteCount,
+      icon: Icons.sticky_note_2_outlined,
+    ),
+    MemoryStatsCard(
+      label: 'Favs',
+      value: provider.favouriteCount,
+      icon: Icons.star,
+    ),
+  ],
+),
 
+const SizedBox(height: 20),
               NewMemoryButton(
   onPressed: _showNewMemorySheet,
 ),
