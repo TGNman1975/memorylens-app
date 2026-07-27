@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 class MapScreen extends StatelessWidget {
   const MapScreen({super.key});
@@ -9,21 +11,18 @@ class MapScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Memory Map'),
       ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.map,
-              size: 80,
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Interactive Memory Map\nComing Soon',
-              textAlign: TextAlign.center,
-            ),
-          ],
+      body: FlutterMap(
+        options: const MapOptions(
+          initialCenter: LatLng(-31.9523, 115.8613),
+          initialZoom: 10,
         ),
+        children: [
+          TileLayer(
+            urlTemplate:
+                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'com.memorylens.app',
+          ),
+        ],
       ),
     );
   }
