@@ -17,7 +17,11 @@ import '../widgets/home/new_memory_bottom_sheet.dart';
 import '../widgets/home/photo_source_sheet.dart';
 import '../widgets/home/home_memory_list.dart';
 
-
+enum MemorySort {
+  newest,
+  oldest,
+  favourites,
+}
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -30,7 +34,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final LocationService _locationService = LocationService();
 
   String _query = '';
-
+  String? _filter;
+  MemorySort _sort = MemorySort.newest;
   @override
   void initState() {
     super.initState();
@@ -160,24 +165,79 @@ Future<void> _showPhotoSourceSheet() async {
     final provider = context.watch<MemoryProvider>();
 
     final memories = provider.memories.where((m) {
-      if (_query.isEmpty) return true;
+  if (_filter == 'photos' && m.imagePath == null) {
+    return false;
+  }
 
-      final q = _query.toLowerCase();
+  if (_filter == 'notes' && m.imagePath != null) {
+    return false;
+  }
 
-      return m.title.toLowerCase().contains(q) ||
-          (m.note ?? '').toLowerCase().contains(q);
-    }).toList();
+  if (_filter == 'favourites' && !m.favourite) {
+    return false;
+  }
 
+  if (_query.isEmpty) return true;
+
+  final q = _query.toLowerCase();
+
+  return m.title.toLowerCase().contains(q) ||
+      (m.note ?? '').toLowerCase().contains(q);
+}).toList();
+    switch (_sort) {
+  case MemorySort.newest:
+    memories.sort(
+      (a, b) => b.createdAt.compareTo(a.createdAt),
+    );
+    break;
+
+  case MemorySort.oldest:
+    memories.sort(
+      (a, b) => a.createdAt.compareTo(b.createdAt),
+    );
+    break;
+
+  case MemorySort.favourites:
+    memories.sort(
+      (a, b) => b.favourite
+          .toString()
+          .compareTo(a.favourite.toString()),
+    );
+    break;
+}
     return Scaffold(
       appBar: AppBar(
         title: const Text('MemoryLens'),
         actions: [
-          IconButton(
-            tooltip: 'Test GPS',
-            icon: const Icon(Icons.my_location),
-            onPressed: _testLocation,
-          ),
-        ],
+  PopupMenuButton<MemorySort>(
+    tooltip: 'Sort',
+    icon: const Icon(Icons.sort),
+    onSelected: (sort) {
+      setState(() {
+        _sort = sort;
+      });
+    },
+    itemBuilder: (_) => const [
+      PopupMenuItem(
+        value: MemorySort.newest,
+        child: Text('Newest'),
+      ),
+      PopupMenuItem(
+        value: MemorySort.oldest,
+        child: Text('Oldest'),
+      ),
+      PopupMenuItem(
+        value: MemorySort.favourites,
+        child: Text('Favourites First'),
+      ),
+    ],
+  ),
+  IconButton(
+    tooltip: 'Test GPS',
+    icon: const Icon(Icons.my_location),
+    onPressed: _testLocation,
+  ),
+],
       ),
       body: SafeArea(
         child: Padding(
@@ -199,19 +259,46 @@ Future<void> _showPhotoSourceSheet() async {
               Row(
   children: [
     MemoryStatsCard(
+      label: 'All',
+      value: provider.totalMemories,
+      icon: Icons.apps,
+      onTap: () {
+        setState(() {
+          _filter = null;
+        });
+      },
+    ),
+    MemoryStatsCard(
       label: 'Photos',
       value: provider.photoCount,
       icon: Icons.photo,
+      onTap: () {
+        setState(() {
+          _filter = _filter == 'photos' ? null : 'photos';
+        });
+      },
     ),
     MemoryStatsCard(
       label: 'Notes',
       value: provider.quickNoteCount,
       icon: Icons.sticky_note_2_outlined,
+      onTap: () {
+        setState(() {
+          _filter = _filter == 'notes' ? null : 'notes';
+        });
+      },
     ),
     MemoryStatsCard(
       label: 'Favs',
       value: provider.favouriteCount,
       icon: Icons.star,
+      onTap: () {
+        setState(() {
+          _filter = _filter == 'favourites'
+              ? null
+              : 'favourites';
+        });
+      },
     ),
   ],
 ),

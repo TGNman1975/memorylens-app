@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../database/app_database.dart';
+import '../../utils/date_grouping.dart';
 import '../memory/memory_card.dart';
+import 'memory_date_header.dart';
 
 class HomeMemoryList extends StatelessWidget {
   const HomeMemoryList({
@@ -23,15 +25,34 @@ class HomeMemoryList extends StatelessWidget {
       );
     }
 
+    String? currentGroup;
+
     return ListView.builder(
       itemCount: memories.length,
       itemBuilder: (context, index) {
         final memory = memories[index];
+        final group = DateGrouping.label(memory.createdAt);
 
-        return MemoryCard(
-          memory: memory,
-          onTap: () => onTap(memory),
-          onDelete: () => onDelete(memory),
+        final widgets = <Widget>[];
+
+        if (group != currentGroup) {
+          currentGroup = group;
+          widgets.add(
+            MemoryDateHeader(title: group),
+          );
+        }
+
+        widgets.add(
+          MemoryCard(
+            memory: memory,
+            onTap: () => onTap(memory),
+            onDelete: () => onDelete(memory),
+          ),
+        );
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: widgets,
         );
       },
     );
