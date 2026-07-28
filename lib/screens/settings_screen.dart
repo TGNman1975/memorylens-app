@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'statistics_screen.dart';
+
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -11,8 +13,8 @@ class SettingsScreen extends StatelessWidget {
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 12),
-        children: const [
-          Padding(
+        children: [
+          const Padding(
             padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: Text(
               'GENERAL',
@@ -23,25 +25,49 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ),
+
           ListTile(
+            leading: const Icon(Icons.bar_chart),
+            title: const Text('Statistics'),
+            subtitle: const Text('Memory overview'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const StatisticsScreen(),
+                ),
+              );
+            },
+          ),
+
+          const Divider(height: 1),
+
+          const ListTile(
             leading: Icon(Icons.backup),
             title: Text('Backup & Restore'),
             subtitle: Text('Coming soon'),
           ),
-          Divider(height: 1),
-          ListTile(
+
+          const Divider(height: 1),
+
+          const ListTile(
             leading: Icon(Icons.palette_outlined),
             title: Text('Appearance'),
             subtitle: Text('Coming soon'),
           ),
-          Divider(height: 1),
-          ListTile(
+
+          const Divider(height: 1),
+
+          const ListTile(
             leading: Icon(Icons.map_outlined),
             title: Text('Map Settings'),
             subtitle: Text('Coming soon'),
           ),
-          Divider(height: 1),
-          Padding(
+
+          const Divider(height: 1),
+
+          const Padding(
             padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text(
               'ABOUT',
@@ -52,7 +78,8 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ),
-          ListTile(
+
+          const ListTile(
             leading: Icon(Icons.info_outline),
             title: Text('About MemoryLens'),
             subtitle: Text('Version 1.0'),
