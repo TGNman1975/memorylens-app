@@ -16,6 +16,7 @@ import '../widgets/home/new_memory_button.dart';
 import '../widgets/home/new_memory_bottom_sheet.dart';
 import '../widgets/home/photo_source_sheet.dart';
 import '../widgets/home/home_memory_list.dart';
+import 'settings_screen.dart';
 
 enum MemorySort {
   newest,
@@ -245,10 +246,22 @@ Future<void> _showPhotoSourceSheet() async {
     },
   ),
   IconButton(
-    tooltip: 'Test GPS',
-    icon: const Icon(Icons.my_location),
-    onPressed: _testLocation,
-  ),
+  tooltip: 'Test GPS',
+  icon: const Icon(Icons.my_location),
+  onPressed: _testLocation,
+),
+IconButton(
+  tooltip: 'Settings',
+  icon: const Icon(Icons.settings),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SettingsScreen(),
+      ),
+    );
+  },
+),
 ],
       ),
       body: SafeArea(

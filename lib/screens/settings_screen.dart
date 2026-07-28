@@ -1,0 +1,64 @@
+import 'package:flutter/material.dart';
+
+class SettingsScreen extends StatelessWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Settings'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        children: const [
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Text(
+              'GENERAL',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          ListTile(
+            leading: Icon(Icons.backup),
+            title: Text('Backup & Restore'),
+            subtitle: Text('Coming soon'),
+          ),
+          Divider(height: 1),
+          ListTile(
+            leading: Icon(Icons.palette_outlined),
+            title: Text('Appearance'),
+            subtitle: Text('Coming soon'),
+          ),
+          Divider(height: 1),
+          ListTile(
+            leading: Icon(Icons.map_outlined),
+            title: Text('Map Settings'),
+            subtitle: Text('Coming soon'),
+          ),
+          Divider(height: 1),
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              'ABOUT',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          ListTile(
+            leading: Icon(Icons.info_outline),
+            title: Text('About MemoryLens'),
+            subtitle: Text('Version 1.0'),
+          ),
+        ],
+      ),
+    );
+  }
+}
