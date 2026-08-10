@@ -13,10 +13,13 @@ class Memories extends Table {
 
   RealColumn get longitude => real().nullable()();
 
-  BoolColumn get favourite => boolean().withDefault(const Constant(false))();
+  BoolColumn get favourite =>
+      boolean().withDefault(const Constant(false))();
 
   DateTimeColumn get createdAt =>
       dateTime().withDefault(currentDateAndTime)();
 
-DateTimeColumn get updatedAt => dateTime().nullable()();
+  DateTimeColumn get updatedAt => dateTime().nullable()();
+
+  DateTimeColumn get reminderAt => dateTime().nullable()();
 }

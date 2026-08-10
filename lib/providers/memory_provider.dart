@@ -12,21 +12,26 @@ class MemoryProvider extends ChangeNotifier {
   List<Memory> _memories = [];
 
   List<Memory> get memories => _memories;
-    int get totalMemories => _memories.length;
 
-int get favouriteCount =>
-    _memories.where((m) => m.favourite).length;
+  int get totalMemories => _memories.length;
 
-int get photoCount =>
-    _memories.where((m) => m.imagePath != null).length;
+  int get favouriteCount =>
+      _memories.where((m) => m.favourite).length;
 
-int get quickNoteCount =>
-    _memories.where((m) => m.imagePath == null).length;
+  int get photoCount =>
+      _memories.where((m) => m.imagePath != null).length;
 
-int get locationCount =>
-    _memories.where(
-      (m) => m.latitude != null && m.longitude != null,
-    ).length;
+  int get quickNoteCount =>
+      _memories.where((m) => m.imagePath == null).length;
+
+  int get locationCount =>
+      _memories.where(
+        (m) => m.latitude != null && m.longitude != null,
+      ).length;
+
+  int get reminderCount =>
+      _memories.where((m) => m.reminderAt != null).length;
+
   // ---------------------------------------------------------------------------
   // Load
   // ---------------------------------------------------------------------------
@@ -41,46 +46,50 @@ int get locationCount =>
   // ---------------------------------------------------------------------------
 
   Future<void> addMemory({
-  required String title,
-  String? note,
-  String? imagePath,
-  double? latitude,
-  double? longitude,
-  bool favourite = false,
-}) async {
-  await repository.add(
-    MemoriesCompanion.insert(
-      title: title,
-      note: Value(note),
-      imagePath: Value(imagePath),
-      latitude: Value(latitude),
-      longitude: Value(longitude),
-      favourite: Value(favourite),
-    ),
-  );
+    required String title,
+    String? note,
+    String? imagePath,
+    double? latitude,
+    double? longitude,
+    bool favourite = false,
+    DateTime? reminderAt,
+  }) async {
+    await repository.add(
+      MemoriesCompanion.insert(
+        title: title,
+        note: Value(note),
+        imagePath: Value(imagePath),
+        latitude: Value(latitude),
+        longitude: Value(longitude),
+        favourite: Value(favourite),
+        reminderAt: Value(reminderAt),
+      ),
+    );
 
-  await loadMemories();
-}
+    await loadMemories();
+  }
 
   // ---------------------------------------------------------------------------
   // Update
   // ---------------------------------------------------------------------------
 
   Future<void> updateMemory({
-  required Memory existing,
-  required String title,
-  String? note,
-  bool favourite = false,
-}) async {
-  final updated = existing.copyWith(
-    title: title,
-    note: Value(note),
-    favourite: favourite,
-  );
+    required Memory existing,
+    required String title,
+    String? note,
+    bool favourite = false,
+    DateTime? reminderAt,
+  }) async {
+    final updated = existing.copyWith(
+      title: title,
+      note: Value(note),
+      favourite: favourite,
+      reminderAt: Value(reminderAt),
+    );
 
-  await repository.update(updated);
-  await loadMemories();
-}
+    await repository.update(updated);
+    await loadMemories();
+  }
 
   // ---------------------------------------------------------------------------
   // Delete

@@ -37,7 +37,7 @@ class SectionTitle extends StatelessWidget {
       style: theme.textTheme.titleLarge,
     ),
   ),
-  if (action != null) action!,
+  ?action,
 ],
     );
   }

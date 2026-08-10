@@ -14,19 +14,26 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
-  // ---------------------------------------------------------------------------
-  // Create
-  // ---------------------------------------------------------------------------
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (Migrator m) async {
+          await m.createAll();
+        },
+        onUpgrade: (Migrator m, int from, int to) async {
+          if (from < 2) {
+            await m.addColumn(
+  memories,
+  memories.reminderAt as GeneratedColumn<Object>,
+);
+          }
+        },
+      );
 
   Future<int> addMemory(MemoriesCompanion memory) {
     return into(memories).insert(memory);
   }
-
-  // ---------------------------------------------------------------------------
-  // Read
-  // ---------------------------------------------------------------------------
 
   Future<List<Memory>> getAllMemories() {
     return (select(memories)
@@ -36,17 +43,9 @@ class AppDatabase extends _$AppDatabase {
         .get();
   }
 
-  // ---------------------------------------------------------------------------
-  // Update
-  // ---------------------------------------------------------------------------
-
   Future<bool> updateMemory(Memory memory) {
     return update(memories).replace(memory);
   }
-
-  // ---------------------------------------------------------------------------
-  // Delete
-  // ---------------------------------------------------------------------------
 
   Future<void> deleteMemory(int id) {
     return (delete(memories)

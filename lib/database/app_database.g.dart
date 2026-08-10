@@ -110,6 +110,17 @@ class $MemoriesTable extends Memories with TableInfo<$MemoriesTable, Memory> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _reminderAtMeta = const VerificationMeta(
+    'reminderAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> reminderAt = GeneratedColumn<DateTime>(
+    'reminder_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -121,6 +132,7 @@ class $MemoriesTable extends Memories with TableInfo<$MemoriesTable, Memory> {
     favourite,
     createdAt,
     updatedAt,
+    reminderAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -187,6 +199,12 @@ class $MemoriesTable extends Memories with TableInfo<$MemoriesTable, Memory> {
         updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
       );
     }
+    if (data.containsKey('reminder_at')) {
+      context.handle(
+        _reminderAtMeta,
+        reminderAt.isAcceptableOrUnknown(data['reminder_at']!, _reminderAtMeta),
+      );
+    }
     return context;
   }
 
@@ -232,6 +250,10 @@ class $MemoriesTable extends Memories with TableInfo<$MemoriesTable, Memory> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       ),
+      reminderAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}reminder_at'],
+      ),
     );
   }
 
@@ -251,6 +273,7 @@ class Memory extends DataClass implements Insertable<Memory> {
   final bool favourite;
   final DateTime createdAt;
   final DateTime? updatedAt;
+  final DateTime? reminderAt;
   const Memory({
     required this.id,
     required this.title,
@@ -261,6 +284,7 @@ class Memory extends DataClass implements Insertable<Memory> {
     required this.favourite,
     required this.createdAt,
     this.updatedAt,
+    this.reminderAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -284,6 +308,9 @@ class Memory extends DataClass implements Insertable<Memory> {
     if (!nullToAbsent || updatedAt != null) {
       map['updated_at'] = Variable<DateTime>(updatedAt);
     }
+    if (!nullToAbsent || reminderAt != null) {
+      map['reminder_at'] = Variable<DateTime>(reminderAt);
+    }
     return map;
   }
 
@@ -306,6 +333,9 @@ class Memory extends DataClass implements Insertable<Memory> {
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(updatedAt),
+      reminderAt: reminderAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reminderAt),
     );
   }
 
@@ -324,6 +354,7 @@ class Memory extends DataClass implements Insertable<Memory> {
       favourite: serializer.fromJson<bool>(json['favourite']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
+      reminderAt: serializer.fromJson<DateTime?>(json['reminderAt']),
     );
   }
   @override
@@ -339,6 +370,7 @@ class Memory extends DataClass implements Insertable<Memory> {
       'favourite': serializer.toJson<bool>(favourite),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
+      'reminderAt': serializer.toJson<DateTime?>(reminderAt),
     };
   }
 
@@ -352,6 +384,7 @@ class Memory extends DataClass implements Insertable<Memory> {
     bool? favourite,
     DateTime? createdAt,
     Value<DateTime?> updatedAt = const Value.absent(),
+    Value<DateTime?> reminderAt = const Value.absent(),
   }) => Memory(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -362,6 +395,7 @@ class Memory extends DataClass implements Insertable<Memory> {
     favourite: favourite ?? this.favourite,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
+    reminderAt: reminderAt.present ? reminderAt.value : this.reminderAt,
   );
   Memory copyWithCompanion(MemoriesCompanion data) {
     return Memory(
@@ -374,6 +408,9 @@ class Memory extends DataClass implements Insertable<Memory> {
       favourite: data.favourite.present ? data.favourite.value : this.favourite,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      reminderAt: data.reminderAt.present
+          ? data.reminderAt.value
+          : this.reminderAt,
     );
   }
 
@@ -388,7 +425,8 @@ class Memory extends DataClass implements Insertable<Memory> {
           ..write('longitude: $longitude, ')
           ..write('favourite: $favourite, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('reminderAt: $reminderAt')
           ..write(')'))
         .toString();
   }
@@ -404,6 +442,7 @@ class Memory extends DataClass implements Insertable<Memory> {
     favourite,
     createdAt,
     updatedAt,
+    reminderAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -417,7 +456,8 @@ class Memory extends DataClass implements Insertable<Memory> {
           other.longitude == this.longitude &&
           other.favourite == this.favourite &&
           other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.reminderAt == this.reminderAt);
 }
 
 class MemoriesCompanion extends UpdateCompanion<Memory> {
@@ -430,6 +470,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
   final Value<bool> favourite;
   final Value<DateTime> createdAt;
   final Value<DateTime?> updatedAt;
+  final Value<DateTime?> reminderAt;
   const MemoriesCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -440,6 +481,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
     this.favourite = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.reminderAt = const Value.absent(),
   });
   MemoriesCompanion.insert({
     this.id = const Value.absent(),
@@ -451,6 +493,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
     this.favourite = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.reminderAt = const Value.absent(),
   }) : title = Value(title);
   static Insertable<Memory> custom({
     Expression<int>? id,
@@ -462,6 +505,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
     Expression<bool>? favourite,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<DateTime>? reminderAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -473,6 +517,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
       if (favourite != null) 'favourite': favourite,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (reminderAt != null) 'reminder_at': reminderAt,
     });
   }
 
@@ -486,6 +531,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
     Value<bool>? favourite,
     Value<DateTime>? createdAt,
     Value<DateTime?>? updatedAt,
+    Value<DateTime?>? reminderAt,
   }) {
     return MemoriesCompanion(
       id: id ?? this.id,
@@ -497,6 +543,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
       favourite: favourite ?? this.favourite,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      reminderAt: reminderAt ?? this.reminderAt,
     );
   }
 
@@ -530,6 +577,9 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (reminderAt.present) {
+      map['reminder_at'] = Variable<DateTime>(reminderAt.value);
+    }
     return map;
   }
 
@@ -544,7 +594,8 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
           ..write('longitude: $longitude, ')
           ..write('favourite: $favourite, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('reminderAt: $reminderAt')
           ..write(')'))
         .toString();
   }
@@ -572,6 +623,7 @@ typedef $$MemoriesTableCreateCompanionBuilder =
       Value<bool> favourite,
       Value<DateTime> createdAt,
       Value<DateTime?> updatedAt,
+      Value<DateTime?> reminderAt,
     });
 typedef $$MemoriesTableUpdateCompanionBuilder =
     MemoriesCompanion Function({
@@ -584,6 +636,7 @@ typedef $$MemoriesTableUpdateCompanionBuilder =
       Value<bool> favourite,
       Value<DateTime> createdAt,
       Value<DateTime?> updatedAt,
+      Value<DateTime?> reminderAt,
     });
 
 class $$MemoriesTableFilterComposer
@@ -637,6 +690,11 @@ class $$MemoriesTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get reminderAt => $composableBuilder(
+    column: $table.reminderAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -694,6 +752,11 @@ class $$MemoriesTableOrderingComposer
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<DateTime> get reminderAt => $composableBuilder(
+    column: $table.reminderAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$MemoriesTableAnnotationComposer
@@ -731,6 +794,11 @@ class $$MemoriesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get reminderAt => $composableBuilder(
+    column: $table.reminderAt,
+    builder: (column) => column,
+  );
 }
 
 class $$MemoriesTableTableManager
@@ -770,6 +838,7 @@ class $$MemoriesTableTableManager
                 Value<bool> favourite = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
+                Value<DateTime?> reminderAt = const Value.absent(),
               }) => MemoriesCompanion(
                 id: id,
                 title: title,
@@ -780,6 +849,7 @@ class $$MemoriesTableTableManager
                 favourite: favourite,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                reminderAt: reminderAt,
               ),
           createCompanionCallback:
               ({
@@ -792,6 +862,7 @@ class $$MemoriesTableTableManager
                 Value<bool> favourite = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
+                Value<DateTime?> reminderAt = const Value.absent(),
               }) => MemoriesCompanion.insert(
                 id: id,
                 title: title,
@@ -802,6 +873,7 @@ class $$MemoriesTableTableManager
                 favourite: favourite,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                reminderAt: reminderAt,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
