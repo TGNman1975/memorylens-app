@@ -21,7 +21,7 @@ class NotificationService {
         await FlutterTimezone.getLocalTimezone();
 
     tz.setLocalLocation(
-      tz.getLocation(timezoneInfo.name),
+      tz.getLocation(timezoneInfo.identifier),
     );
 
     const androidSettings = AndroidInitializationSettings(
@@ -34,14 +34,15 @@ class NotificationService {
       requestSoundPermission: true,
     );
 
-    const settings = InitializationSettings(
+    final settings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
     );
 
     await _notifications.initialize(
-      settings,
-      onDidReceiveNotificationResponse: _onNotificationTapped,
+      settings: settings,
+      onDidReceiveNotificationResponse:
+          _onNotificationTapped,
     );
 
     await _createAndroidChannel();
@@ -59,14 +60,18 @@ class NotificationService {
     await _notifications
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(channel);
+        ?.createNotificationChannel(
+          channel,
+        );
   }
 
   static Future<void> _requestPermissions() async {
-    await _notifications
+    final android = _notifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestNotificationsPermission();
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    await android?.requestNotificationsPermission();
+
 
     await _notifications
         .resolvePlatformSpecificImplementation<
@@ -87,15 +92,17 @@ class NotificationService {
       return;
     }
 
+    await cancelReminder(memoryId);
+
     final scheduledDate = tz.TZDateTime.from(
       reminderAt,
       tz.local,
     );
 
     await _notifications.zonedSchedule(
-      memoryId,
-      'MemoryLens Reminder',
-      title,
+      id: memoryId,
+      title: 'MemoryLens Reminder',
+      body: title,
       scheduledDate: scheduledDate,
       notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
@@ -118,7 +125,9 @@ class NotificationService {
   }
 
   static Future<void> cancelReminder(int memoryId) async {
-    await _notifications.cancel(memoryId);
+    await _notifications.cancel(
+      id: memoryId,
+    );
   }
 
   static void _onNotificationTapped(

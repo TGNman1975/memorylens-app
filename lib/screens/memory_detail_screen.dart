@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../services/notification_service.dart';
 import '../database/app_database.dart';
 import '../providers/memory_provider.dart';
@@ -43,10 +44,11 @@ class MemoryDetailScreen extends StatelessWidget {
   Future<void> _setReminder(BuildContext context) async {
     final now = DateTime.now();
 
-    final initialDate = memory.reminderAt != null &&
-            memory.reminderAt!.isAfter(now)
-        ? memory.reminderAt!
-        : now.add(const Duration(hours: 1));
+    final initialDate =
+        memory.reminderAt != null &&
+                memory.reminderAt!.isAfter(now)
+            ? memory.reminderAt!
+            : now.add(const Duration(hours: 1));
 
     final selectedDate = await showDatePicker(
       context: context,
@@ -89,6 +91,43 @@ class MemoryDetailScreen extends StatelessWidget {
       return;
     }
 
+    final dateText =
+        '${reminderAt.day.toString().padLeft(2, '0')}/'
+        '${reminderAt.month.toString().padLeft(2, '0')}/'
+        '${reminderAt.year}';
+
+    final timeText =
+        TimeOfDay.fromDateTime(reminderAt).format(context);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Save Reminder?'),
+          content: Text(
+            'Remind you about "${memory.title}" '
+            'on $dateText at $timeText?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
+              child: const Text('Save Reminder'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
     await context.read<MemoryProvider>().updateMemory(
           existing: memory,
           title: memory.title,
@@ -96,22 +135,55 @@ class MemoryDetailScreen extends StatelessWidget {
           favourite: memory.favourite,
           reminderAt: reminderAt,
         );
-await NotificationService.scheduleReminder(
-  memoryId: memory.id,
-  title: memory.title,
-  reminderAt: reminderAt,
-);
+
+    await NotificationService.scheduleReminder(
+      memoryId: memory.id,
+      title: memory.title,
+      reminderAt: reminderAt,
+    );
+
     if (!context.mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Reminder saved.'),
+      SnackBar(
+        content: Text(
+          'Reminder saved for $dateText at $timeText.',
+        ),
       ),
     );
   }
 
   Future<void> _removeReminder(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Remove Reminder?'),
+          content: const Text(
+            'This reminder will no longer notify you.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: const Text('Keep'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
+              child: const Text('Remove'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
     await NotificationService.cancelReminder(memory.id);
+
     await context.read<MemoryProvider>().updateMemory(
           existing: memory,
           title: memory.title,
@@ -129,25 +201,29 @@ await NotificationService.scheduleReminder(
     );
   }
 
-  String _formatReminder(DateTime reminder) {
+  String _formatReminder(
+    BuildContext context,
+    DateTime reminder,
+  ) {
     final date =
         '${reminder.day.toString().padLeft(2, '0')}/'
         '${reminder.month.toString().padLeft(2, '0')}/'
         '${reminder.year}';
 
-    final time = TimeOfDay.fromDateTime(reminder).format(
-      _currentContext!,
-    );
+    final time = TimeOfDay.fromDateTime(reminder).format(context);
 
     return '$date at $time';
   }
 
-  BuildContext? _currentContext;
-
   @override
   Widget build(BuildContext context) {
-    _currentContext = context;
-
+    final currentMemory = context
+    .watch<MemoryProvider>()
+    .memories
+    .firstWhere(
+      (item) => item.id == memory.id,
+      orElse: () => memory,
+    );
     return Scaffold(
       appBar: AppBar(
         title: const Text('Memory'),
@@ -182,7 +258,9 @@ await NotificationService.scheduleReminder(
               children: [
                 Text(
                   memory.title,
-                  style: Theme.of(context).textTheme.headlineMedium,
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineMedium,
                 ),
 
                 const SizedBox(height: 12),
@@ -241,7 +319,8 @@ await NotificationService.scheduleReminder(
                       (memory.note ?? '').isEmpty
                           ? 'No notes were added.'
                           : memory.note!,
-                      style: Theme.of(context).textTheme.bodyLarge,
+                      style:
+                          Theme.of(context).textTheme.bodyLarge,
                     ),
                   ),
                 ),
@@ -259,12 +338,15 @@ await NotificationService.scheduleReminder(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
                       children: [
-                        if (memory.reminderAt == null) ...[
+                        if (currentMemory.reminderAt == null) ...[
                           const Row(
                             children: [
-                              Icon(Icons.notifications_none),
+                              Icon(
+                                Icons.notifications_none,
+                              ),
                               SizedBox(width: 12),
                               Expanded(
                                 child: Text(
@@ -277,11 +359,16 @@ await NotificationService.scheduleReminder(
                         ] else ...[
                           Row(
                             children: [
-                              const Icon(Icons.notifications_active),
+                              const Icon(
+                                Icons.notifications_active,
+                              ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
-                                  _formatReminder(memory.reminderAt!),
+                                  _formatReminder(
+                                    context,
+                                    currentMemory.reminderAt!,
+                                  ),
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyLarge,
@@ -295,18 +382,19 @@ await NotificationService.scheduleReminder(
                           children: [
                             Expanded(
                               child: FilledButton.icon(
-                                onPressed: () => _setReminder(context),
+                                onPressed: () =>
+                                    _setReminder(context),
                                 icon: const Icon(
                                   Icons.notifications,
                                 ),
                                 label: Text(
-                                  memory.reminderAt == null
-                                      ? 'Set Reminder'
-                                      : 'Change Reminder',
+                                  currentMemory.reminderAt == null
+                                    ? 'Set Reminder'
+                                    : 'Change Reminder',
                                 ),
                               ),
                             ),
-                            if (memory.reminderAt != null) ...[
+                            if (currentMemory.reminderAt != null) ...[
                               const SizedBox(width: 8),
                               IconButton(
                                 tooltip: 'Remove reminder',
