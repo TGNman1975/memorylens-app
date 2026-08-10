@@ -29,9 +29,9 @@ class NotificationService {
     );
 
     const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
 
     final settings = InitializationSettings(
@@ -46,7 +46,12 @@ class NotificationService {
     );
 
     await _createAndroidChannel();
-    await _requestPermissions();
+
+    // IMPORTANT:
+    // Do not request notification/alarm permissions here.
+    //
+    // Permissions are requested only when the user actually
+    // creates a reminder.
   }
 
   static Future<void> _createAndroidChannel() async {
@@ -70,17 +75,23 @@ class NotificationService {
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
 
+    // Notification permission is requested when the user
+    // actually chooses to create a reminder.
     await android?.requestNotificationsPermission();
 
+    // Exact alarm permission is also requested only when
+    // the user actually chooses to create a reminder.
+    await android?.requestExactAlarmsPermission();
 
-    await _notifications
+    final ios = _notifications
         .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
+            IOSFlutterLocalNotificationsPlugin>();
+
+    await ios?.requestPermissions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
   }
 
   static Future<void> scheduleReminder({
@@ -91,6 +102,10 @@ class NotificationService {
     if (reminderAt.isBefore(DateTime.now())) {
       return;
     }
+
+    // Ask for permissions at the moment the user actually
+    // saves a reminder.
+    await _requestPermissions();
 
     await cancelReminder(memoryId);
 

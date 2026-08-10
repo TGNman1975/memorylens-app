@@ -5,7 +5,7 @@ import 'quick_note_screen.dart';
 import '../services/gallery_service.dart';
 import '../providers/memory_provider.dart';
 import '../services/camera_service.dart';
-import '../services/location_service.dart';
+
 import '../widgets/common/app_header.dart';
 import '../widgets/home/memory_stats_card.dart';
 import '../widgets/common/section_title.dart';
@@ -34,7 +34,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final CameraService _camera = CameraService();
-  final LocationService _locationService = LocationService();
 
   String _query = '';
   String? _filter;
@@ -141,33 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _testLocation() async {
-    try {
-      final position =
-          await _locationService.getCurrentLocation();
 
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Latitude: ${position.latitude}\n'
-            'Longitude: ${position.longitude}',
-          ),
-          duration: const Duration(seconds: 5),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
 
   Widget _buildEmptyState(
     BuildContext context,
@@ -366,11 +339,7 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
           ),
-          IconButton(
-            tooltip: 'Test GPS',
-            icon: const Icon(Icons.my_location),
-            onPressed: _testLocation,
-          ),
+          
           IconButton(
             tooltip: 'Settings',
             icon: const Icon(Icons.settings),
