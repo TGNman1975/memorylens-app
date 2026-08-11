@@ -157,28 +157,28 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primaryContainer,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.auto_awesome,
-                size: 48,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onPrimaryContainer,
+            SizedBox(
+              width: 104,
+              height: 104,
+              child: Image.asset(
+                'assets/images/memorylens_logo.png',
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(
+                    Icons.search,
+                    size: 48,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary,
+                  );
+                },
               ),
             ),
 
             const SizedBox(height: 24),
 
             Text(
-              'Your memories, remembered.',
+              'Save it. Forget it.',
               textAlign: TextAlign.center,
               style: Theme.of(context)
                   .textTheme
@@ -191,9 +191,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
 
             Text(
-              'Capture a photo, save a quick note, '
-              'or set a reminder for something '
-              'you’ll need later.',
+              'MemoryLens stores your memories, '
+              'so you don’t have to.',
               textAlign: TextAlign.center,
               style: Theme.of(context)
                   .textTheme
