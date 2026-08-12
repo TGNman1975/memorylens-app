@@ -184,6 +184,8 @@ class MemoryDetailScreen extends StatelessWidget {
 
     await NotificationService.cancelReminder(memory.id);
 
+    if (!context.mounted) return;
+
     await context.read<MemoryProvider>().updateMemory(
           existing: memory,
           title: memory.title,
@@ -412,8 +414,8 @@ class MemoryDetailScreen extends StatelessWidget {
                   ),
                 ),
 
-                if (memory.latitude != null &&
-                    memory.longitude != null) ...[
+                if (currentMemory.latitude != null &&
+                    currentMemory.longitude != null) ...[
                   const SizedBox(height: 24),
 
                   Text(
@@ -431,18 +433,18 @@ class MemoryDetailScreen extends StatelessWidget {
                             CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Latitude: ${memory.latitude}',
+                            'Latitude: ${currentMemory.latitude}',
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Longitude: ${memory.longitude}',
+                            'Longitude: ${currentMemory.longitude}',
                           ),
                           const SizedBox(height: 16),
                           FilledButton.icon(
                             onPressed: () => _openGoogleMaps(
                               context,
-                              memory.latitude!,
-                              memory.longitude!,
+                              currentMemory.latitude!,
+                              currentMemory.longitude!,
                             ),
                             icon: const Icon(Icons.map),
                             label: const Text(
@@ -522,7 +524,7 @@ class MemoryDetailScreen extends StatelessWidget {
                       ),
                     );
 
-                    if (confirm != true) return;
+                    if (confirm != true || !context.mounted) return;
 
                     await context
                         .read<MemoryProvider>()

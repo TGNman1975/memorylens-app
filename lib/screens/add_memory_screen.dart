@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -14,10 +13,10 @@ class AddMemoryScreen extends StatefulWidget {
   final Memory? memory;
 
   const AddMemoryScreen({
-  super.key,
-  this.image,
-  this.memory,
-});
+    super.key,
+    this.image,
+    this.memory,
+  });
 
   @override
   State<AddMemoryScreen> createState() => _AddMemoryScreenState();
@@ -30,11 +29,7 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
   final LocationService _locationService = LocationService();
 
   bool _saving = false;
-  bool _loadingLocation = true;
   bool _favourite = false;
-
-  double? _latitude;
-  double? _longitude;
 
   bool get _editing => widget.memory != null;
 
@@ -51,38 +46,6 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
     );
 
     _favourite = widget.memory?.favourite ?? false;
-
-    if (_editing) {
-      _latitude = widget.memory?.latitude;
-      _longitude = widget.memory?.longitude;
-      _loadingLocation = false;
-    } else {
-      _loadLocation();
-    }
-  }
-
-  Future<void> _loadLocation() async {
-    try {
-      final Position position = await _locationService
-          .getCurrentLocation()
-          .timeout(const Duration(seconds: 5));
-
-      if (!mounted) return;
-
-      setState(() {
-        _latitude = position.latitude;
-        _longitude = position.longitude;
-      });
-    } catch (_) {
-      // GPS unavailable or timed out.
-      // Saving will continue without coordinates.
-    } finally {
-      if (!mounted) return;
-
-      setState(() {
-        _loadingLocation = false;
-      });
-    }
   }
 
   @override
@@ -92,47 +55,79 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
     super.dispose();
   }
 
+  Future<Position?> _getLocationForSave() async {
+    if (_editing) {
+      return null;
+    }
+
+    try {
+      return await _locationService
+          .getCurrentLocation()
+          .timeout(const Duration(seconds: 5));
+    } catch (_) {
+      // Location is optional. A GPS failure must never prevent
+      // the memory from being saved.
+      return null;
+    }
+  }
+
   Future<void> _saveMemory() async {
-  final title = _titleController.text.trim();
-  final note = _noteController.text.trim();
+    final title = _titleController.text.trim();
+    final note = _noteController.text.trim();
 
-  if (title.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please enter a title'),
-      ),
-    );
-    return;
+    if (title.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a title'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _saving = true;
+    });
+
+    final provider = context.read<MemoryProvider>();
+
+    try {
+      if (_editing) {
+        await provider.updateMemory(
+          existing: widget.memory!,
+          title: title,
+          note: note.isEmpty ? null : note,
+          favourite: _favourite,
+        );
+      } else {
+        final Position? position = await _getLocationForSave();
+
+        await provider.addMemory(
+          title: title,
+          note: note.isEmpty ? null : note,
+          imagePath: widget.image?.path,
+          latitude: position?.latitude,
+          longitude: position?.longitude,
+          favourite: _favourite,
+        );
+      }
+
+      if (!mounted) return;
+
+      Navigator.pop(context, true);
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _saving = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to save memory. Please try again.'),
+        ),
+      );
+    }
   }
-
-  setState(() {
-    _saving = true;
-  });
-
-  final provider = context.read<MemoryProvider>();
-
-  if (_editing) {
-    await provider.updateMemory(
-      existing: widget.memory!,
-      title: title,
-      note: note.isEmpty ? null : note,
-      favourite: _favourite,
-    );
-  } else {
-    await provider.addMemory(
-      title: title,
-      note: note.isEmpty ? null : note,
-      imagePath: widget.image?.path,
-      latitude: _latitude,
-      longitude: _longitude,
-      favourite: _favourite,
-    );
-  }
-
-  if (!mounted) return;
-
-  Navigator.pop(context, true);
-}
 
   @override
   Widget build(BuildContext context) {
@@ -148,18 +143,16 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
           child: Column(
             children: [
               if (widget.image != null)
-  ClipRRect(
-    borderRadius: BorderRadius.circular(12),
-    child: Image.file(
-      widget.image!,
-      width: double.infinity,
-      height: 220,
-      fit: BoxFit.cover,
-    ),
-  ),
-
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.file(
+                    widget.image!,
+                    width: double.infinity,
+                    height: 220,
+                    fit: BoxFit.cover,
+                  ),
+                ),
               const SizedBox(height: 20),
-
               TextField(
                 controller: _titleController,
                 decoration: const InputDecoration(
@@ -168,9 +161,7 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
                 ),
                 textInputAction: TextInputAction.next,
               ),
-
               const SizedBox(height: 16),
-
               TextField(
                 controller: _noteController,
                 maxLines: 4,
@@ -179,55 +170,36 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
                   border: OutlineInputBorder(),
                 ),
               ),
-
               const SizedBox(height: 16),
-
               SwitchListTile(
                 value: _favourite,
                 title: const Text('Favourite'),
-                onChanged: (value) {
-                  setState(() {
-                    _favourite = value;
-                  });
-                },
+                onChanged: _saving
+                    ? null
+                    : (value) {
+                        setState(() {
+                          _favourite = value;
+                        });
+                      },
               ),
-
-              const SizedBox(height: 8),
-
-Row(
-  children: [
-    Icon(
-      _loadingLocation
-          ? Icons.location_searching
-          : (_latitude != null
-              ? Icons.location_on
-              : Icons.location_off),
-    ),
-    const SizedBox(height: 8),
-
-Text(
-  'Latitude: ${_latitude?.toStringAsFixed(6) ?? "null"}',
-  style: const TextStyle(fontSize: 12),
-),
-
-Text(
-  'Longitude: ${_longitude?.toStringAsFixed(6) ?? "null"}',
-  style: const TextStyle(fontSize: 12),
-),
-    const SizedBox(width: 8),
-    Expanded(
-      child: Text(
-        _loadingLocation
-            ? 'Getting GPS location...'
-            : (_latitude != null
-                ? 'Location captured'
-                : 'Location unavailable'),
-      ),
-    ),
-  ],
-),
+              if (!_editing) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.location_on_outlined,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Location will be saved automatically when available.',
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const Spacer(),
-
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
