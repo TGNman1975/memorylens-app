@@ -3,8 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../providers/memory_provider.dart';
 
-
-
 class QuickNoteScreen extends StatefulWidget {
   const QuickNoteScreen({super.key});
 
@@ -17,6 +15,7 @@ class _QuickNoteScreenState extends State<QuickNoteScreen> {
   final _noteController = TextEditingController();
 
   bool _favourite = false;
+  bool _saving = false;
 
   @override
   void dispose() {
@@ -25,23 +24,60 @@ class _QuickNoteScreenState extends State<QuickNoteScreen> {
     super.dispose();
   }
 
+  String _generateTitle(String note) {
+    final cleaned = note.replaceAll(RegExp(r'\s+'), ' ').trim();
+
+    if (cleaned.length <= 60) {
+      return cleaned;
+    }
+
+    return '${cleaned.substring(0, 57).trim()}...';
+  }
+
   Future<void> _save() async {
-  final title = _titleController.text.trim();
+    final enteredTitle = _titleController.text.trim();
+    final note = _noteController.text.trim();
 
-  if (title.isEmpty) return;
+    if (enteredTitle.isEmpty && note.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Enter a note before saving.'),
+        ),
+      );
+      return;
+    }
 
-  await context.read<MemoryProvider>().addMemory(
-    title: title,
-    note: _noteController.text.trim().isEmpty
-        ? null
-        : _noteController.text.trim(),
-    favourite: _favourite,
-  );
+    final title =
+        enteredTitle.isNotEmpty ? enteredTitle : _generateTitle(note);
 
-  if (!mounted) return;
+    setState(() {
+      _saving = true;
+    });
 
-  Navigator.pop(context, true);
-}
+    try {
+      await context.read<MemoryProvider>().addMemory(
+            title: title,
+            note: note.isEmpty ? null : note,
+            favourite: _favourite,
+          );
+
+      if (!mounted) return;
+
+      Navigator.pop(context, true);
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _saving = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to save memory. Please try again.'),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,42 +85,55 @@ class _QuickNoteScreenState extends State<QuickNoteScreen> {
       appBar: AppBar(
         title: const Text('Quick Note'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Title',
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              TextField(
+                controller: _titleController,
+                enabled: !_saving,
+                decoration: const InputDecoration(
+                  labelText: 'Title',
+                  hintText: 'Optional',
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _noteController,
-              maxLines: 6,
-              decoration: const InputDecoration(
-                labelText: 'Notes',
+              const SizedBox(height: 16),
+              TextField(
+                controller: _noteController,
+                enabled: !_saving,
+                maxLines: 6,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  labelText: 'Notes',
+                  hintText: 'What do you want to remember?',
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-            SwitchListTile(
-              title: const Text('Favourite'),
-              value: _favourite,
-              onChanged: (value) {
-                setState(() {
-                  _favourite = value;
-                });
-              },
-            ),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _save,
-                child: const Text('Save'),
+              SwitchListTile(
+                title: const Text('Favourite'),
+                value: _favourite,
+                onChanged: _saving
+                    ? null
+                    : (value) {
+                        setState(() {
+                          _favourite = value;
+                        });
+                      },
               ),
-            ),
-          ],
+              const Spacer(),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _saving ? null : _save,
+                  child: Text(
+                    _saving ? 'Saving...' : 'Save',
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

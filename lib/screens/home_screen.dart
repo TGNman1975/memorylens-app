@@ -9,7 +9,7 @@ import '../services/camera_service.dart';
 import '../widgets/common/app_header.dart';
 import '../widgets/home/memory_stats_card.dart';
 import '../widgets/common/section_title.dart';
-import 'map_screen.dart';
+
 import '../widgets/memory/memory_search_bar.dart';
 import 'add_memory_screen.dart';
 import 'memory_detail_screen.dart';
@@ -326,18 +326,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          IconButton(
-            tooltip: 'Map',
-            icon: const Icon(Icons.map),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const MapScreen(),
-                ),
-              );
-            },
-          ),
+
           
           IconButton(
             tooltip: 'Settings',

@@ -1,12 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 
 import '../database/app_database.dart';
 import '../providers/memory_provider.dart';
-import '../services/location_service.dart';
 
 class AddMemoryScreen extends StatefulWidget {
   final File? image;
@@ -25,8 +23,6 @@ class AddMemoryScreen extends StatefulWidget {
 class _AddMemoryScreenState extends State<AddMemoryScreen> {
   late final TextEditingController _titleController;
   late final TextEditingController _noteController;
-
-  final LocationService _locationService = LocationService();
 
   bool _saving = false;
   bool _favourite = false;
@@ -53,22 +49,6 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
     _titleController.dispose();
     _noteController.dispose();
     super.dispose();
-  }
-
-  Future<Position?> _getLocationForSave() async {
-    if (_editing) {
-      return null;
-    }
-
-    try {
-      return await _locationService
-          .getCurrentLocation()
-          .timeout(const Duration(seconds: 5));
-    } catch (_) {
-      // Location is optional. A GPS failure must never prevent
-      // the memory from being saved.
-      return null;
-    }
   }
 
   Future<void> _saveMemory() async {
@@ -99,14 +79,10 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
           favourite: _favourite,
         );
       } else {
-        final Position? position = await _getLocationForSave();
-
         await provider.addMemory(
           title: title,
           note: note.isEmpty ? null : note,
           imagePath: widget.image?.path,
-          latitude: position?.latitude,
-          longitude: position?.longitude,
           favourite: _favourite,
         );
       }
@@ -182,23 +158,6 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
                         });
                       },
               ),
-              if (!_editing) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Location will be saved automatically when available.',
-                      ),
-                    ),
-                  ],
-                ),
-              ],
               const Spacer(),
               SizedBox(
                 width: double.infinity,
