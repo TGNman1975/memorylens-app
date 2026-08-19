@@ -16,7 +16,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await NotificationService.initialize();
-
+  NotificationService.onNotificationTap = _openMemoryFromNotification;
   final database = AppDatabase();
   final repository = MemoryRepository(database);
 
@@ -27,7 +27,6 @@ Future<void> main() async {
     ),
   );
 
-  NotificationService.onNotificationTap = _openMemoryFromNotification;
 }
 
 void _openMemoryFromNotification(int memoryId) {

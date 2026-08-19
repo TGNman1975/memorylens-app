@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:image_picker/image_picker.dart';
 
+import 'image_storage_service.dart';
+
 class GalleryService {
   static final ImagePicker _picker = ImagePicker();
 
@@ -13,6 +15,8 @@ class GalleryService {
 
     if (image == null) return null;
 
-    return File(image.path);
+    final sourceFile = File(image.path);
+
+    return ImageStorageService.saveImage(sourceFile);
   }
 }

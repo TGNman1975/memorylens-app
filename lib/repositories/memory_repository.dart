@@ -1,4 +1,6 @@
 import '../database/app_database.dart';
+import '../services/image_storage_service.dart';
+import '../services/notification_service.dart';
 
 class MemoryRepository {
   final AppDatabase database;
@@ -34,6 +36,16 @@ class MemoryRepository {
   // ---------------------------------------------------------------------------
 
   Future<void> delete(int id) async {
+    final memory = await database.getMemory(id);
+
+    if (memory == null) {
+      return;
+    }
+
+    await NotificationService.cancelReminder(memory.id);
+
     await database.deleteMemory(id);
+
+    await ImageStorageService.deleteImage(memory.imagePath);
   }
 }

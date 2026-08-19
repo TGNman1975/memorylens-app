@@ -51,22 +51,6 @@ class SettingsScreen extends StatelessWidget {
 
           const Divider(height: 1),
 
-          const ListTile(
-            leading: Icon(Icons.palette_outlined),
-            title: Text('Appearance'),
-            subtitle: Text('Coming soon'),
-          ),
-
-          const Divider(height: 1),
-
-          const ListTile(
-            leading: Icon(Icons.map_outlined),
-            title: Text('Map Settings'),
-            subtitle: Text('Coming soon'),
-          ),
-
-          const Divider(height: 1),
-
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text(

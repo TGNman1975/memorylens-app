@@ -73,10 +73,11 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
     try {
       if (_editing) {
         await provider.updateMemory(
-          existing: widget.memory!,
-          title: title,
-          note: note.isEmpty ? null : note,
-          favourite: _favourite,
+         existing: widget.memory!,
+         title: title,
+         note: note.isEmpty ? null : note,
+         favourite: _favourite,
+          reminderAt: widget.memory!.reminderAt,
         );
       } else {
         await provider.addMemory(

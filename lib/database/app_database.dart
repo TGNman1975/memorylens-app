@@ -42,6 +42,11 @@ class AppDatabase extends _$AppDatabase {
           ]))
         .get();
   }
+  Future<Memory?> getMemory(int id) {
+  return (select(memories)
+        ..where((tbl) => tbl.id.equals(id)))
+      .getSingleOrNull();
+  }
 
   Future<bool> updateMemory(Memory memory) {
     return update(memories).replace(memory);
