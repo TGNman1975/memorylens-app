@@ -93,7 +93,10 @@ class NotificationService {
       sound: true,
     );
   }
-
+  static Future<NotificationAppLaunchDetails?>
+    getNotificationAppLaunchDetails() {
+    return _notifications.getNotificationAppLaunchDetails();
+  }
   static Future<void> scheduleReminder({
     required int memoryId,
     required String title,

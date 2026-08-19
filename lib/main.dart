@@ -16,17 +16,30 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await NotificationService.initialize();
+
   NotificationService.onNotificationTap = _openMemoryFromNotification;
+
+  final launchDetails =
+      await NotificationService.getNotificationAppLaunchDetails();
+
+  final launchedMemoryId =
+      launchDetails?.didNotificationLaunchApp == true
+          ? int.tryParse(
+              launchDetails?.notificationResponse?.payload ?? '',
+            )
+          : null;
+
   final database = AppDatabase();
   final repository = MemoryRepository(database);
 
   runApp(
     ChangeNotifierProvider(
       create: (_) => MemoryProvider(repository)..loadMemories(),
-      child: const MemoryLensApp(),
+      child: MemoryLensApp(
+        initialMemoryId: launchedMemoryId,
+      ),
     ),
   );
-
 }
 
 void _openMemoryFromNotification(int memoryId) {
@@ -56,8 +69,41 @@ void _openMemoryFromNotification(int memoryId) {
   );
 }
 
-class MemoryLensApp extends StatelessWidget {
-  const MemoryLensApp({super.key});
+class MemoryLensApp extends StatefulWidget {
+  const MemoryLensApp({
+    super.key,
+    this.initialMemoryId,
+  });
+
+  final int? initialMemoryId;
+
+  @override
+  State<MemoryLensApp> createState() => _MemoryLensAppState();
+}
+
+class _MemoryLensAppState extends State<MemoryLensApp> {
+  bool _openedInitialMemory = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (_openedInitialMemory) return;
+
+    final memoryId = widget.initialMemoryId;
+
+    if (memoryId == null) {
+      _openedInitialMemory = true;
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      _openedInitialMemory = true;
+      _openMemoryFromNotification(memoryId);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

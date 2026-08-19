@@ -24,9 +24,9 @@ class AppDatabase extends _$AppDatabase {
         onUpgrade: (Migrator m, int from, int to) async {
           if (from < 2) {
             await m.addColumn(
-  memories,
-  memories.reminderAt as GeneratedColumn<Object>,
-);
+              memories,
+              memories.reminderAt,
+            );
           }
         },
       );
@@ -42,10 +42,11 @@ class AppDatabase extends _$AppDatabase {
           ]))
         .get();
   }
+
   Future<Memory?> getMemory(int id) {
-  return (select(memories)
-        ..where((tbl) => tbl.id.equals(id)))
-      .getSingleOrNull();
+    return (select(memories)
+          ..where((tbl) => tbl.id.equals(id)))
+        .getSingleOrNull();
   }
 
   Future<bool> updateMemory(Memory memory) {

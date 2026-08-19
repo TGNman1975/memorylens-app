@@ -15,7 +15,6 @@ import 'add_memory_screen.dart';
 import 'memory_detail_screen.dart';
 import '../widgets/home/new_memory_button.dart';
 import '../widgets/home/new_memory_bottom_sheet.dart';
-import '../widgets/home/photo_source_sheet.dart';
 import '../widgets/home/home_memory_list.dart';
 import 'settings_screen.dart';
 
@@ -55,11 +54,11 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (_) => NewMemoryBottomSheet(
         onTakePhoto: () {
           Navigator.pop(context);
-          _showPhotoSourceSheet();
+          _capture();
         },
         onChoosePhoto: () {
           Navigator.pop(context);
-          _showPhotoSourceSheet();
+          _choosePhoto();
         },
         onQuickNote: () {
           Navigator.pop(context);
@@ -69,37 +68,23 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _showPhotoSourceSheet() async {
-    showModalBottomSheet(
-      context: context,
-      showDragHandle: true,
-      builder: (_) => PhotoSourceSheet(
-        onCamera: () {
-          Navigator.pop(context);
-          _capture();
-        },
-        onGallery: () async {
-          Navigator.pop(context);
+  Future<void> _choosePhoto() async {
+    final image = await GalleryService.pickImage();
 
-          final image = await GalleryService.pickImage();
+    if (!mounted || image == null) return;
 
-          if (!mounted || image == null) return;
-
-          final result = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AddMemoryScreen(
-                image: image,
-              ),
-            ),
-          );
-
-          if (result == true && mounted) {
-            await context.read<MemoryProvider>().loadMemories();
-          }
-        },
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddMemoryScreen(
+          image: image,
+        ),
       ),
     );
+
+    if (result == true && mounted) {
+      await context.read<MemoryProvider>().loadMemories();
+    }
   }
 
   Future<void> _capture() async {
@@ -139,8 +124,6 @@ class _HomeScreenState extends State<HomeScreen> {
       await context.read<MemoryProvider>().loadMemories();
     }
   }
-
-
 
   Widget _buildEmptyState(
     BuildContext context,
@@ -222,8 +205,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
             _EmptyStateTip(
               icon: Icons.photo_camera_outlined,
-              title: 'Remember places',
-              text: 'Save photos and where you were.',
+              title: 'Remember moments',
+              text: 'Save photos of things you want to remember.',
             ),
 
             const SizedBox(height: 12),
@@ -241,9 +224,6 @@ class _HomeScreenState extends State<HomeScreen> {
               title: 'Remember later',
               text: 'Set a reminder for the future.',
             ),
-
-            if (provider.memories.isNotEmpty)
-              const SizedBox.shrink(),
           ],
         ),
       ),
@@ -326,8 +306,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-
-          
           IconButton(
             tooltip: 'Settings',
             icon: const Icon(Icons.settings),
