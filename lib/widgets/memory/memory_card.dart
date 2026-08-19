@@ -23,10 +23,11 @@ class MemoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Dismissible(
       key: ValueKey(memory.id),
       direction: DismissDirection.endToStart,
-
       confirmDismiss: (_) async {
         return await showDialog<bool>(
               context: context,
@@ -49,40 +50,32 @@ class MemoryCard extends StatelessWidget {
             ) ??
             false;
       },
-
       onDismissed: (_) => onDelete(),
-
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 24),
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: Colors.red,
+          color: theme.colorScheme.error,
           borderRadius: BorderRadius.circular(16),
         ),
         child: const Icon(
-          Icons.delete,
+          Icons.delete_outline,
           color: Colors.white,
         ),
       ),
-
       child: Card(
         margin: const EdgeInsets.only(bottom: 12),
-
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
           onTap: onTap,
-
           child: Padding(
             padding: const EdgeInsets.all(12),
-
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildThumbnail(),
-
+                _buildThumbnail(context),
                 const SizedBox(width: 16),
-
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -92,39 +85,38 @@ class MemoryCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               memory.title,
-                              style: const TextStyle(
+                              style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 17,
                               ),
-                              maxLines: 1,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-
-                          if (memory.favourite)
-                            const Icon(
+                          if (memory.favourite) ...[
+                            const SizedBox(width: 8),
+                            Icon(
                               Icons.star,
-                              color: Colors.amber,
+                              color: theme.colorScheme.primary,
                               size: 20,
                             ),
+                          ],
                         ],
                       ),
-
-                      if ((memory.note ?? "").isNotEmpty) ...[
+                      if ((memory.note ?? '').isNotEmpty) ...[
                         const SizedBox(height: 6),
-
                         Text(
                           memory.note!,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium,
                         ),
                       ],
-
                       const SizedBox(height: 8),
-
                       Text(
                         DateFormatter.format(memory.createdAt),
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
@@ -137,22 +129,20 @@ class MemoryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildThumbnail() {
+  Widget _buildThumbnail(BuildContext context) {
     if (memory.imagePath == null) {
       return Container(
         width: 72,
         height: 72,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          color: Colors.grey.shade800,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
         child: Icon(
-  memory.imagePath == null
-      ? Icons.sticky_note_2_outlined
-      : Icons.photo,
-  size: 32,
-  color: Colors.white70,
-),
+          Icons.sticky_note_2_outlined,
+          size: 32,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       );
     }
 
@@ -163,6 +153,23 @@ class MemoryCard extends StatelessWidget {
         width: 72,
         height: 72,
         fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: Theme.of(context)
+                  .colorScheme
+                  .surfaceContainerHighest,
+            ),
+            child: Icon(
+              Icons.broken_image_outlined,
+              size: 30,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          );
+        },
       ),
     );
   }

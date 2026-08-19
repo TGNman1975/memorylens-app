@@ -24,11 +24,6 @@ class MemoryProvider extends ChangeNotifier {
   int get quickNoteCount =>
       _memories.where((m) => m.imagePath == null).length;
 
-  int get locationCount =>
-      _memories.where(
-        (m) => m.latitude != null && m.longitude != null,
-      ).length;
-
   int get reminderCount =>
       _memories.where((m) => m.reminderAt != null).length;
 
@@ -49,8 +44,6 @@ class MemoryProvider extends ChangeNotifier {
     required String title,
     String? note,
     String? imagePath,
-    double? latitude,
-    double? longitude,
     bool favourite = false,
     DateTime? reminderAt,
   }) async {
@@ -59,8 +52,6 @@ class MemoryProvider extends ChangeNotifier {
         title: title,
         note: Value(note),
         imagePath: Value(imagePath),
-        latitude: Value(latitude),
-        longitude: Value(longitude),
         favourite: Value(favourite),
         reminderAt: Value(reminderAt),
       ),

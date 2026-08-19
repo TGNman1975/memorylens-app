@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../services/notification_service.dart';
 import '../database/app_database.dart';
@@ -18,36 +17,20 @@ class MemoryDetailScreen extends StatelessWidget {
 
   final Memory memory;
 
-  Future<void> _openGoogleMaps(
-    BuildContext context,
-    double latitude,
-    double longitude,
-  ) async {
-    final uri = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude',
+  Future<void> _setReminder(BuildContext context) async {
+    final provider = context.read<MemoryProvider>();
+
+    final currentMemory = provider.memories.firstWhere(
+      (item) => item.id == memory.id,
+      orElse: () => memory,
     );
 
-    if (!await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    )) {
-      if (!context.mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Unable to open Google Maps'),
-        ),
-      );
-    }
-  }
-
-  Future<void> _setReminder(BuildContext context) async {
     final now = DateTime.now();
 
     final initialDate =
-        memory.reminderAt != null &&
-                memory.reminderAt!.isAfter(now)
-            ? memory.reminderAt!
+        currentMemory.reminderAt != null &&
+                currentMemory.reminderAt!.isAfter(now)
+            ? currentMemory.reminderAt!
             : now.add(const Duration(hours: 1));
 
     final selectedDate = await showDatePicker(
@@ -105,7 +88,7 @@ class MemoryDetailScreen extends StatelessWidget {
         return AlertDialog(
           title: const Text('Save Reminder?'),
           content: Text(
-            'Remind you about "${memory.title}" '
+            'Remind you about "${currentMemory.title}" '
             'on $dateText at $timeText?',
           ),
           actions: [
@@ -128,17 +111,17 @@ class MemoryDetailScreen extends StatelessWidget {
 
     if (confirmed != true || !context.mounted) return;
 
-    await context.read<MemoryProvider>().updateMemory(
-          existing: memory,
-          title: memory.title,
-          note: memory.note,
-          favourite: memory.favourite,
-          reminderAt: reminderAt,
-        );
+    await provider.updateMemory(
+      existing: currentMemory,
+      title: currentMemory.title,
+      note: currentMemory.note,
+      favourite: currentMemory.favourite,
+      reminderAt: reminderAt,
+    );
 
     await NotificationService.scheduleReminder(
-      memoryId: memory.id,
-      title: memory.title,
+      memoryId: currentMemory.id,
+      title: currentMemory.title,
       reminderAt: reminderAt,
     );
 
@@ -154,6 +137,13 @@ class MemoryDetailScreen extends StatelessWidget {
   }
 
   Future<void> _removeReminder(BuildContext context) async {
+    final provider = context.read<MemoryProvider>();
+
+    final currentMemory = provider.memories.firstWhere(
+      (item) => item.id == memory.id,
+      orElse: () => memory,
+    );
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
@@ -182,17 +172,17 @@ class MemoryDetailScreen extends StatelessWidget {
 
     if (confirmed != true || !context.mounted) return;
 
-    await NotificationService.cancelReminder(memory.id);
+    await NotificationService.cancelReminder(currentMemory.id);
 
     if (!context.mounted) return;
 
-    await context.read<MemoryProvider>().updateMemory(
-          existing: memory,
-          title: memory.title,
-          note: memory.note,
-          favourite: memory.favourite,
-          reminderAt: null,
-        );
+    await provider.updateMemory(
+      existing: currentMemory,
+      title: currentMemory.title,
+      note: currentMemory.note,
+      favourite: currentMemory.favourite,
+      reminderAt: null,
+    );
 
     if (!context.mounted) return;
 
@@ -220,12 +210,13 @@ class MemoryDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentMemory = context
-    .watch<MemoryProvider>()
-    .memories
-    .firstWhere(
-      (item) => item.id == memory.id,
-      orElse: () => memory,
-    );
+        .watch<MemoryProvider>()
+        .memories
+        .firstWhere(
+          (item) => item.id == memory.id,
+          orElse: () => memory,
+        );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Memory'),
@@ -233,10 +224,10 @@ class MemoryDetailScreen extends StatelessWidget {
       body: ListView(
         children: [
           Hero(
-            tag: 'memory_${memory.id}',
-            child: memory.imagePath != null
+            tag: 'memory_${currentMemory.id}',
+            child: currentMemory.imagePath != null
                 ? Image.file(
-                    File(memory.imagePath!),
+                    File(currentMemory.imagePath!),
                     width: double.infinity,
                     height: 300,
                     fit: BoxFit.cover,
@@ -247,7 +238,7 @@ class MemoryDetailScreen extends StatelessWidget {
                         .colorScheme
                         .surfaceContainerHighest,
                     child: const Icon(
-                      Icons.photo,
+                      Icons.sticky_note_2_outlined,
                       size: 100,
                     ),
                   ),
@@ -259,7 +250,7 @@ class MemoryDetailScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  memory.title,
+                  currentMemory.title,
                   style: Theme.of(context)
                       .textTheme
                       .headlineMedium,
@@ -267,7 +258,7 @@ class MemoryDetailScreen extends StatelessWidget {
 
                 const SizedBox(height: 12),
 
-                if (memory.favourite)
+                if (currentMemory.favourite)
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -301,7 +292,7 @@ class MemoryDetailScreen extends StatelessWidget {
                 const SizedBox(height: 4),
 
                 Text(
-                  DateFormatter.format(memory.createdAt),
+                  DateFormatter.format(currentMemory.createdAt),
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
 
@@ -318,9 +309,9 @@ class MemoryDetailScreen extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
-                      (memory.note ?? '').isEmpty
+                      (currentMemory.note ?? '').isEmpty
                           ? 'No notes were added.'
-                          : memory.note!,
+                          : currentMemory.note!,
                       style:
                           Theme.of(context).textTheme.bodyLarge,
                     ),
@@ -391,8 +382,8 @@ class MemoryDetailScreen extends StatelessWidget {
                                 ),
                                 label: Text(
                                   currentMemory.reminderAt == null
-                                    ? 'Set Reminder'
-                                    : 'Change Reminder',
+                                      ? 'Set Reminder'
+                                      : 'Change Reminder',
                                 ),
                               ),
                             ),
@@ -414,136 +405,105 @@ class MemoryDetailScreen extends StatelessWidget {
                   ),
                 ),
 
-                if (currentMemory.latitude != null &&
-                    currentMemory.longitude != null) ...[
-                  const SizedBox(height: 24),
-
-                  Text(
-                    'Location',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Latitude: ${currentMemory.latitude}',
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Longitude: ${currentMemory.longitude}',
-                          ),
-                          const SizedBox(height: 16),
-                          FilledButton.icon(
-                            onPressed: () => _openGoogleMaps(
-                              context,
-                              currentMemory.latitude!,
-                              currentMemory.longitude!,
-                            ),
-                            icon: const Icon(Icons.map),
-                            label: const Text(
-                              'Open in Google Maps',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-
                 const SizedBox(height: 32),
 
-                FilledButton.icon(
-                  onPressed: () async {
-                    if (memory.imagePath == null) return;
-
-                    final updated =
-                        await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AddMemoryScreen(
-                          image: File(memory.imagePath!),
-                          memory: memory,
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () async {
+                      final updated =
+                          await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AddMemoryScreen(
+                            image: currentMemory.imagePath != null
+                                ? File(currentMemory.imagePath!)
+                                : null,
+                            memory: currentMemory,
+                          ),
                         ),
-                      ),
-                    );
+                      );
 
-                    if (!context.mounted) return;
+                      if (!context.mounted) return;
 
-                    if (updated == true) {
-                      Navigator.pop(context, true);
-                    }
-                  },
-                  icon: const Icon(Icons.edit),
-                  label: const Text('Edit Memory'),
-                ),
-
-                const SizedBox(height: 12),
-
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
+                      if (updated == true) {
+                        await context
+                            .read<MemoryProvider>()
+                            .loadMemories();
+                      }
+                    },
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Edit Memory'),
                   ),
-                  icon: const Icon(Icons.delete),
-                  label: const Text('Delete Memory'),
-                  onPressed: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (dialogContext) =>
-                          AlertDialog(
-                        title: const Text('Delete Memory'),
-                        content: const Text(
-                          'Are you sure you want to permanently '
-                          'delete this memory?',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.pop(
-                              dialogContext,
-                              false,
-                            ),
-                            child: const Text('Cancel'),
-                          ),
-                          FilledButton(
-                            onPressed: () =>
-                                Navigator.pop(
-                              dialogContext,
-                              true,
-                            ),
-                            child: const Text('Delete'),
-                          ),
-                        ],
-                      ),
-                    );
-
-                    if (confirm != true || !context.mounted) return;
-
-                    await context
-                        .read<MemoryProvider>()
-                        .deleteMemory(memory.id);
-
-                    if (!context.mounted) return;
-
-                    Navigator.pop(context, true);
-                  },
                 ),
 
                 const SizedBox(height: 12),
 
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  icon: const Icon(Icons.arrow_back),
-                  label: const Text('Back'),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor:
+                          Theme.of(context).colorScheme.error,
+                      foregroundColor: Colors.white,
+                    ),
+                    icon: const Icon(Icons.delete),
+                    label: const Text('Delete Memory'),
+                    onPressed: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (dialogContext) =>
+                            AlertDialog(
+                          title: const Text('Delete Memory'),
+                          content: const Text(
+                            'Are you sure you want to permanently '
+                            'delete this memory?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(
+                                dialogContext,
+                                false,
+                              ),
+                              child: const Text('Cancel'),
+                            ),
+                            FilledButton(
+                              onPressed: () =>
+                                  Navigator.pop(
+                                dialogContext,
+                                true,
+                              ),
+                              child: const Text('Delete'),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirm != true || !context.mounted) return;
+
+                      await context
+                          .read<MemoryProvider>()
+                          .deleteMemory(currentMemory.id);
+
+                      if (!context.mounted) return;
+
+                      Navigator.pop(context, true);
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('Back'),
+                  ),
                 ),
               ],
             ),
