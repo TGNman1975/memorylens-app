@@ -2,13 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
-import '../../utils/date_formatter.dart';
 import '../../database/app_database.dart';
+import '../../services/image_storage_service.dart';
+import '../../utils/date_formatter.dart';
 
-/// Displays a single memory.
-///
-/// This widget is responsible only for presentation.
-/// It contains no Provider or database logic.
 class MemoryCard extends StatelessWidget {
   const MemoryCard({
     super.key,
@@ -38,11 +35,13 @@ class MemoryCard extends StatelessWidget {
                 ),
                 actions: [
                   TextButton(
-                    onPressed: () => Navigator.pop(context, false),
+                    onPressed: () =>
+                        Navigator.pop(context, false),
                     child: const Text('Cancel'),
                   ),
                   FilledButton(
-                    onPressed: () => Navigator.pop(context, true),
+                    onPressed: () =>
+                        Navigator.pop(context, true),
                     child: const Text('Delete'),
                   ),
                 ],
@@ -78,25 +77,32 @@ class MemoryCard extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
                           Expanded(
                             child: Text(
                               memory.title,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: theme
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    fontWeight:
+                                        FontWeight.bold,
+                                  ),
                               maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                              overflow:
+                                  TextOverflow.ellipsis,
                             ),
                           ),
                           if (memory.favourite) ...[
                             const SizedBox(width: 8),
                             Icon(
                               Icons.star,
-                              color: theme.colorScheme.primary,
+                              color:
+                                  theme.colorScheme.primary,
                               size: 20,
                             ),
                           ],
@@ -108,14 +114,20 @@ class MemoryCard extends StatelessWidget {
                           memory.note!,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodyMedium,
+                          style:
+                              theme.textTheme.bodyMedium,
                         ),
                       ],
                       const SizedBox(height: 8),
                       Text(
-                        DateFormatter.format(memory.createdAt),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                        DateFormatter.format(
+                          memory.createdAt,
+                        ),
+                        style:
+                            theme.textTheme.bodySmall
+                                ?.copyWith(
+                          color: theme.colorScheme
+                              .onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -130,46 +142,57 @@ class MemoryCard extends StatelessWidget {
   }
 
   Widget _buildThumbnail(BuildContext context) {
-    if (memory.imagePath == null) {
-      return Container(
-        width: 72,
-        height: 72,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        ),
-        child: Icon(
-          Icons.sticky_note_2_outlined,
-          size: 32,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-      );
+    if (memory.imagePath == null ||
+        memory.imagePath!.isEmpty) {
+      return _placeholder(context);
     }
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: Image.file(
-        File(memory.imagePath!),
-        width: 72,
-        height: 72,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
+    return FutureBuilder<File?>(
+      future: ImageStorageService.resolveImageFile(
+        memory.imagePath,
+      ),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData ||
+            snapshot.data == null) {
+          return _placeholder(context);
+        }
+
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.file(
+            snapshot.data!,
             width: 72,
             height: 72,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: Theme.of(context)
-                  .colorScheme
-                  .surfaceContainerHighest,
-            ),
-            child: Icon(
-              Icons.broken_image_outlined,
-              size: 30,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          );
-        },
+            fit: BoxFit.cover,
+            errorBuilder: (
+              context,
+              error,
+              stackTrace,
+            ) {
+              return _placeholder(context);
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _placeholder(BuildContext context) {
+    return Container(
+      width: 72,
+      height: 72,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHighest,
+      ),
+      child: Icon(
+        Icons.sticky_note_2_outlined,
+        size: 32,
+        color: Theme.of(context)
+            .colorScheme
+            .onSurfaceVariant,
       ),
     );
   }

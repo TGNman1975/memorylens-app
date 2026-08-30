@@ -73,10 +73,10 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
     try {
       if (_editing) {
         await provider.updateMemory(
-         existing: widget.memory!,
-         title: title,
-         note: note.isEmpty ? null : note,
-         favourite: _favourite,
+          existing: widget.memory!,
+          title: title,
+          note: note.isEmpty ? null : note,
+          favourite: _favourite,
           reminderAt: widget.memory!.reminderAt,
         );
       } else {
@@ -115,69 +115,86 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
         ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              if (widget.image != null)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    widget.image!,
-                    width: double.infinity,
-                    height: 220,
-                    fit: BoxFit.cover,
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (widget.image != null) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.file(
+                          widget.image!,
+                          width: double.infinity,
+                          height: 220,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                    TextField(
+                      controller: _titleController,
+                      decoration: const InputDecoration(
+                        labelText: 'Title',
+                        border: OutlineInputBorder(),
+                      ),
+                      textInputAction: TextInputAction.next,
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _noteController,
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                        labelText: 'Notes',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      value: _favourite,
+                      title: const Text('Favourite'),
+                      onChanged: _saving
+                          ? null
+                          : (value) {
+                              setState(() {
+                                _favourite = value;
+                              });
+                            },
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _saving ? null : _saveMemory,
+                    icon: Icon(
+                      _editing ? Icons.save : Icons.add,
+                    ),
+                    label: Text(
+                      _saving
+                          ? 'Saving...'
+                          : (_editing
+                              ? 'Save Changes'
+                              : 'Save Memory'),
+                    ),
                   ),
                 ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Title',
-                  border: OutlineInputBorder(),
-                ),
-                textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _noteController,
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  labelText: 'Notes',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SwitchListTile(
-                value: _favourite,
-                title: const Text('Favourite'),
-                onChanged: _saving
-                    ? null
-                    : (value) {
-                        setState(() {
-                          _favourite = value;
-                        });
-                      },
-              ),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _saving ? null : _saveMemory,
-                  icon: Icon(
-                    _editing ? Icons.save : Icons.add,
-                  ),
-                  label: Text(
-                    _saving
-                        ? 'Saving...'
-                        : (_editing
-                            ? 'Save Changes'
-                            : 'Save Memory'),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

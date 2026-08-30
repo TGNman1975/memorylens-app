@@ -22,48 +22,50 @@ class HomeMemoryList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (memories.isEmpty) {
       return const EmptyState(
-        message: 'Start by creating your first memory.',
-        icon: Icons.auto_stories_outlined,
+        message: 'No memories match your search or filter.',
+        icon: Icons.search_off_outlined,
       );
     }
 
     String? currentGroup;
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        // Refresh will be connected to MemoryProvider later.
-      },
-      child: ListView.builder(
-        itemCount: memories.length,
-        itemBuilder: (context, index) {
-          final memory = memories[index];
-          final group = DateGrouping.label(memory.createdAt);
+    return ListView.builder(
+      padding: const EdgeInsets.only(
+        bottom: 24,
+      ),
+      itemCount: memories.length,
+      itemBuilder: (context, index) {
+        final memory = memories[index];
+        final group = DateGrouping.label(
+          memory.createdAt,
+        );
 
-          final widgets = <Widget>[];
+        final widgets = <Widget>[];
 
-          if (group != currentGroup) {
-            currentGroup = group;
-            widgets.add(
-              MemoryDateHeader(
-                title: group,
-              ),
-            );
-          }
+        if (group != currentGroup) {
+          currentGroup = group;
 
           widgets.add(
-            MemoryCard(
-              memory: memory,
-              onTap: () => onTap(memory),
-              onDelete: () => onDelete(memory),
+            MemoryDateHeader(
+              title: group,
             ),
           );
+        }
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: widgets,
-          );
-        },
-      ),
+        widgets.add(
+          MemoryCard(
+            memory: memory,
+            onTap: () => onTap(memory),
+            onDelete: () => onDelete(memory),
+          ),
+        );
+
+        return Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: widgets,
+        );
+      },
     );
   }
 }

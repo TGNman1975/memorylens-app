@@ -3,9 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../services/notification_service.dart';
 import '../database/app_database.dart';
 import '../providers/memory_provider.dart';
+import '../services/image_storage_service.dart';
+import '../services/notification_service.dart';
 import '../utils/date_formatter.dart';
 import 'add_memory_screen.dart';
 
@@ -16,6 +17,33 @@ class MemoryDetailScreen extends StatelessWidget {
   });
 
   final Memory memory;
+
+  Future<void> _toggleFavourite(
+    BuildContext context,
+    Memory currentMemory,
+  ) async {
+    final provider = context.read<MemoryProvider>();
+
+    try {
+      await provider.updateMemory(
+        existing: currentMemory,
+        title: currentMemory.title,
+        note: currentMemory.note,
+        favourite: !currentMemory.favourite,
+        reminderAt: currentMemory.reminderAt,
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Unable to update favourite. Please try again.',
+          ),
+        ),
+      );
+    }
+  }
 
   Future<void> _setReminder(BuildContext context) async {
     final provider = context.read<MemoryProvider>();
@@ -48,14 +76,19 @@ class MemoryDetailScreen extends StatelessWidget {
       lastDate: DateTime(now.year + 10),
     );
 
-    if (selectedDate == null || !context.mounted) return;
+    if (selectedDate == null || !context.mounted) {
+      return;
+    }
 
     final selectedTime = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.fromDateTime(initialDate),
+      initialTime:
+          TimeOfDay.fromDateTime(initialDate),
     );
 
-    if (selectedTime == null || !context.mounted) return;
+    if (selectedTime == null || !context.mounted) {
+      return;
+    }
 
     final reminderAt = DateTime(
       selectedDate.year,
@@ -68,7 +101,9 @@ class MemoryDetailScreen extends StatelessWidget {
     if (reminderAt.isBefore(now)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please choose a future date and time.'),
+          content: Text(
+            'Please choose a future date and time.',
+          ),
         ),
       );
       return;
@@ -80,7 +115,9 @@ class MemoryDetailScreen extends StatelessWidget {
         '${reminderAt.year}';
 
     final timeText =
-        TimeOfDay.fromDateTime(reminderAt).format(context);
+        TimeOfDay.fromDateTime(reminderAt).format(
+      context,
+    );
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -93,15 +130,13 @@ class MemoryDetailScreen extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext, false);
-              },
+              onPressed: () =>
+                  Navigator.pop(dialogContext, false),
               child: const Text('Cancel'),
             ),
             FilledButton(
-              onPressed: () {
-                Navigator.pop(dialogContext, true);
-              },
+              onPressed: () =>
+                  Navigator.pop(dialogContext, true),
               child: const Text('Save Reminder'),
             ),
           ],
@@ -109,7 +144,9 @@ class MemoryDetailScreen extends StatelessWidget {
       },
     );
 
-    if (confirmed != true || !context.mounted) return;
+    if (confirmed != true || !context.mounted) {
+      return;
+    }
 
     await provider.updateMemory(
       existing: currentMemory,
@@ -136,7 +173,9 @@ class MemoryDetailScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _removeReminder(BuildContext context) async {
+  Future<void> _removeReminder(
+    BuildContext context,
+  ) async {
     final provider = context.read<MemoryProvider>();
 
     final currentMemory = provider.memories.firstWhere(
@@ -154,15 +193,13 @@ class MemoryDetailScreen extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext, false);
-              },
+              onPressed: () =>
+                  Navigator.pop(dialogContext, false),
               child: const Text('Keep'),
             ),
             FilledButton(
-              onPressed: () {
-                Navigator.pop(dialogContext, true);
-              },
+              onPressed: () =>
+                  Navigator.pop(dialogContext, true),
               child: const Text('Remove'),
             ),
           ],
@@ -170,9 +207,13 @@ class MemoryDetailScreen extends StatelessWidget {
       },
     );
 
-    if (confirmed != true || !context.mounted) return;
+    if (confirmed != true || !context.mounted) {
+      return;
+    }
 
-    await NotificationService.cancelReminder(currentMemory.id);
+    await NotificationService.cancelReminder(
+      currentMemory.id,
+    );
 
     if (!context.mounted) return;
 
@@ -202,52 +243,48 @@ class MemoryDetailScreen extends StatelessWidget {
         '${reminder.month.toString().padLeft(2, '0')}/'
         '${reminder.year}';
 
-    final time = TimeOfDay.fromDateTime(reminder).format(context);
+    final time =
+        TimeOfDay.fromDateTime(reminder).format(context);
 
     return '$date at $time';
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentMemory = context
-        .watch<MemoryProvider>()
-        .memories
-        .firstWhere(
-          (item) => item.id == memory.id,
-          orElse: () => memory,
-        );
+    final currentMemory =
+        context.watch<MemoryProvider>().memories.firstWhere(
+              (item) => item.id == memory.id,
+              orElse: () => memory,
+            );
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Memory'),
+        actions: [
+          IconButton(
+            tooltip: currentMemory.favourite
+                ? 'Remove from favourites'
+                : 'Add to favourites',
+            onPressed: () => _toggleFavourite(
+              context,
+              currentMemory,
+            ),
+            icon: Icon(
+              currentMemory.favourite
+                  ? Icons.star
+                  : Icons.star_border,
+            ),
+          ),
+        ],
       ),
       body: ListView(
         children: [
-          Hero(
-            tag: 'memory_${currentMemory.id}',
-            child: currentMemory.imagePath != null
-                ? Image.file(
-                    File(currentMemory.imagePath!),
-                    width: double.infinity,
-                    height: 300,
-                    fit: BoxFit.cover,
-                  )
-                : Container(
-                    height: 300,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest,
-                    child: const Icon(
-                      Icons.sticky_note_2_outlined,
-                      size: 100,
-                    ),
-                  ),
-          ),
-
+          _buildImage(context, currentMemory),
           Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Text(
                   currentMemory.title,
@@ -255,18 +292,19 @@ class MemoryDetailScreen extends StatelessWidget {
                       .textTheme
                       .headlineMedium,
                 ),
-
                 const SizedBox(height: 12),
 
                 if (currentMemory.favourite)
                   Container(
-                    padding: const EdgeInsets.symmetric(
+                    padding:
+                        const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.amber.shade100,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius:
+                          BorderRadius.circular(20),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
@@ -286,34 +324,38 @@ class MemoryDetailScreen extends StatelessWidget {
 
                 Text(
                   'Created',
-                  style: Theme.of(context).textTheme.titleSmall,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall,
                 ),
-
                 const SizedBox(height: 4),
-
                 Text(
-                  DateFormatter.format(currentMemory.createdAt),
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  DateFormatter.format(
+                    currentMemory.createdAt,
+                  ),
                 ),
 
                 const SizedBox(height: 24),
 
                 Text(
                   'Notes',
-                  style: Theme.of(context).textTheme.titleSmall,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall,
                 ),
-
                 const SizedBox(height: 8),
-
                 Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding:
+                        const EdgeInsets.all(16),
                     child: Text(
-                      (currentMemory.note ?? '').isEmpty
+                      (currentMemory.note ?? '')
+                              .isEmpty
                           ? 'No notes were added.'
                           : currentMemory.note!,
-                      style:
-                          Theme.of(context).textTheme.bodyLarge,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyLarge,
                     ),
                   ),
                 ),
@@ -322,19 +364,22 @@ class MemoryDetailScreen extends StatelessWidget {
 
                 Text(
                   'Reminder',
-                  style: Theme.of(context).textTheme.titleSmall,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall,
                 ),
-
                 const SizedBox(height: 8),
 
                 Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding:
+                        const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment:
                           CrossAxisAlignment.start,
                       children: [
-                        if (currentMemory.reminderAt == null) ...[
+                        if (currentMemory.reminderAt ==
+                            null) ...[
                           const Row(
                             children: [
                               Icon(
@@ -362,15 +407,13 @@ class MemoryDetailScreen extends StatelessWidget {
                                     context,
                                     currentMemory.reminderAt!,
                                   ),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyLarge,
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 12),
                         ],
+
                         Row(
                           children: [
                             Expanded(
@@ -381,13 +424,15 @@ class MemoryDetailScreen extends StatelessWidget {
                                   Icons.notifications,
                                 ),
                                 label: Text(
-                                  currentMemory.reminderAt == null
+                                  currentMemory.reminderAt ==
+                                          null
                                       ? 'Set Reminder'
                                       : 'Change Reminder',
                                 ),
                               ),
                             ),
-                            if (currentMemory.reminderAt != null) ...[
+                            if (currentMemory.reminderAt !=
+                                null) ...[
                               const SizedBox(width: 8),
                               IconButton(
                                 tooltip: 'Remove reminder',
@@ -411,14 +456,20 @@ class MemoryDetailScreen extends StatelessWidget {
                   width: double.infinity,
                   child: FilledButton.icon(
                     onPressed: () async {
+                      final imageFile =
+                          await ImageStorageService
+                              .resolveImageFile(
+                        currentMemory.imagePath,
+                      );
+
+                      if (!context.mounted) return;
+
                       final updated =
                           await Navigator.push<bool>(
                         context,
                         MaterialPageRoute(
                           builder: (_) => AddMemoryScreen(
-                            image: currentMemory.imagePath != null
-                                ? File(currentMemory.imagePath!)
-                                : null,
+                            image: imageFile,
                             memory: currentMemory,
                           ),
                         ),
@@ -444,17 +495,22 @@ class MemoryDetailScreen extends StatelessWidget {
                   child: FilledButton.icon(
                     style: FilledButton.styleFrom(
                       backgroundColor:
-                          Theme.of(context).colorScheme.error,
+                          Theme.of(context)
+                              .colorScheme
+                              .error,
                       foregroundColor: Colors.white,
                     ),
                     icon: const Icon(Icons.delete),
-                    label: const Text('Delete Memory'),
+                    label:
+                        const Text('Delete Memory'),
                     onPressed: () async {
-                      final confirm = await showDialog<bool>(
+                      final confirm =
+                          await showDialog<bool>(
                         context: context,
                         builder: (dialogContext) =>
                             AlertDialog(
-                          title: const Text('Delete Memory'),
+                          title:
+                              const Text('Delete Memory'),
                           content: const Text(
                             'Are you sure you want to permanently '
                             'delete this memory?',
@@ -466,7 +522,8 @@ class MemoryDetailScreen extends StatelessWidget {
                                 dialogContext,
                                 false,
                               ),
-                              child: const Text('Cancel'),
+                              child:
+                                  const Text('Cancel'),
                             ),
                             FilledButton(
                               onPressed: () =>
@@ -474,17 +531,23 @@ class MemoryDetailScreen extends StatelessWidget {
                                 dialogContext,
                                 true,
                               ),
-                              child: const Text('Delete'),
+                              child:
+                                  const Text('Delete'),
                             ),
                           ],
                         ),
                       );
 
-                      if (confirm != true || !context.mounted) return;
+                      if (confirm != true ||
+                          !context.mounted) {
+                        return;
+                      }
 
                       await context
                           .read<MemoryProvider>()
-                          .deleteMemory(currentMemory.id);
+                          .deleteMemory(
+                            currentMemory.id,
+                          );
 
                       if (!context.mounted) return;
 
@@ -501,7 +564,8 @@ class MemoryDetailScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.pop(context);
                     },
-                    icon: const Icon(Icons.arrow_back),
+                    icon:
+                        const Icon(Icons.arrow_back),
                     label: const Text('Back'),
                   ),
                 ),
@@ -509,6 +573,59 @@ class MemoryDetailScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildImage(
+    BuildContext context,
+    Memory currentMemory,
+  ) {
+    if (currentMemory.imagePath == null ||
+        currentMemory.imagePath!.isEmpty) {
+      return _imagePlaceholder(context);
+    }
+
+    return FutureBuilder<File?>(
+      future: ImageStorageService.resolveImageFile(
+        currentMemory.imagePath,
+      ),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData ||
+            snapshot.data == null) {
+          return _imagePlaceholder(context);
+        }
+
+        return Image.file(
+          snapshot.data!,
+          width: double.infinity,
+          height: 300,
+          fit: BoxFit.cover,
+          errorBuilder: (
+            context,
+            error,
+            stackTrace,
+          ) {
+            return _imagePlaceholder(context);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _imagePlaceholder(
+    BuildContext context,
+  ) {
+    return Container(
+      height: 300,
+      color: Theme.of(context)
+          .colorScheme
+          .surfaceContainerHighest,
+      child: const Center(
+        child: Icon(
+          Icons.sticky_note_2_outlined,
+          size: 100,
+        ),
       ),
     );
   }

@@ -1,13 +1,14 @@
-import 'package:flutter/material.dart';
 import 'package:drift/drift.dart';
+import 'package:flutter/material.dart';
 
 import '../database/app_database.dart';
 import '../repositories/memory_repository.dart';
+import '../services/image_storage_service.dart';
 
 class MemoryProvider extends ChangeNotifier {
-  final MemoryRepository repository;
-
   MemoryProvider(this.repository);
+
+  final MemoryRepository repository;
 
   List<Memory> _memories = [];
 
@@ -16,16 +17,26 @@ class MemoryProvider extends ChangeNotifier {
   int get totalMemories => _memories.length;
 
   int get favouriteCount =>
-      _memories.where((m) => m.favourite).length;
+      _memories.where((memory) => memory.favourite).length;
 
   int get photoCount =>
-      _memories.where((m) => m.imagePath != null).length;
+      _memories.where(
+        (memory) =>
+            memory.imagePath != null &&
+            memory.imagePath!.isNotEmpty,
+      ).length;
 
   int get quickNoteCount =>
-      _memories.where((m) => m.imagePath == null).length;
+      _memories.where(
+        (memory) =>
+            memory.imagePath == null ||
+            memory.imagePath!.isEmpty,
+      ).length;
 
   int get reminderCount =>
-      _memories.where((m) => m.reminderAt != null).length;
+      _memories.where(
+        (memory) => memory.reminderAt != null,
+      ).length;
 
   // ---------------------------------------------------------------------------
   // Load
@@ -47,11 +58,14 @@ class MemoryProvider extends ChangeNotifier {
     bool favourite = false,
     DateTime? reminderAt,
   }) async {
+    final storedImagePath =
+        await ImageStorageService.toStoredPath(imagePath);
+
     await repository.add(
       MemoriesCompanion.insert(
         title: title,
         note: Value(note),
-        imagePath: Value(imagePath),
+        imagePath: Value(storedImagePath),
         favourite: Value(favourite),
         reminderAt: Value(reminderAt),
       ),
@@ -79,6 +93,7 @@ class MemoryProvider extends ChangeNotifier {
     );
 
     await repository.update(updated);
+
     await loadMemories();
   }
 
