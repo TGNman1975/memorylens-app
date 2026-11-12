@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/memory_provider.dart';
 import 'folders_screen.dart';
+import '../providers/memory_provider.dart';
 
 class QuickNoteScreen extends StatefulWidget {
   const QuickNoteScreen({super.key});
@@ -42,15 +42,12 @@ class _QuickNoteScreenState extends State<QuickNoteScreen> {
 
     if (enteredTitle.isEmpty && note.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Enter a note before saving.'),
-        ),
+        const SnackBar(content: Text('Enter a note before saving.')),
       );
       return;
     }
 
-    final title =
-        enteredTitle.isNotEmpty ? enteredTitle : _generateTitle(note);
+    final title = enteredTitle.isNotEmpty ? enteredTitle : _generateTitle(note);
 
     setState(() {
       _saving = true;
@@ -58,11 +55,11 @@ class _QuickNoteScreenState extends State<QuickNoteScreen> {
 
     try {
       await context.read<MemoryProvider>().addMemory(
-            title: title,
-            note: note.isEmpty ? null : note,
-            favourite: _favourite,
-            folderId: _folderId,
-          );
+        title: title,
+        note: note.isEmpty ? null : note,
+        favourite: _favourite,
+        folderId: _folderId,
+      );
 
       if (!mounted) return;
 
@@ -85,62 +82,58 @@ class _QuickNoteScreenState extends State<QuickNoteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quick Note'),
-      ),
+      appBar: AppBar(title: const Text('Quick Note')),
       body: SafeArea(
-        child: Padding(
+        child: ListView(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              TextField(
-                controller: _titleController,
-                enabled: !_saving,
-                decoration: const InputDecoration(
-                  labelText: 'Title',
-                  hintText: 'Optional',
-                  border: OutlineInputBorder(),
-                ),
+          children: [
+            TextField(
+              controller: _titleController,
+              enabled: !_saving,
+              decoration: const InputDecoration(
+                labelText: 'Title',
+                hintText: 'Optional',
+                border: OutlineInputBorder(),
               ),
-              FolderField(
-                id: _folderId,
-                onChanged: _saving ? null : (id) => setState(() => _folderId = id),
+            ),
+            FolderField(
+              id: _folderId,
+              onChanged: _saving
+                  ? null
+                  : (id) => setState(() => _folderId = id),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _noteController,
+              enabled: !_saving,
+              maxLines: 6,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(
+                labelText: 'Notes',
+                hintText: 'What do you want to remember?',
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _noteController,
-                enabled: !_saving,
-                maxLines: 6,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  labelText: 'Notes',
-                  hintText: 'What do you want to remember?',
-                  border: OutlineInputBorder(),
-                ),
+            ),
+            SwitchListTile(
+              title: const Text('Favourite'),
+              value: _favourite,
+              onChanged: _saving
+                  ? null
+                  : (value) {
+                      setState(() {
+                        _favourite = value;
+                      });
+                    },
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _saving ? null : _save,
+                child: Text(_saving ? 'Saving...' : 'Save'),
               ),
-              SwitchListTile(
-                title: const Text('Favourite'),
-                value: _favourite,
-                onChanged: _saving
-                    ? null
-                    : (value) {
-                        setState(() {
-                          _favourite = value;
-                        });
-                      },
-              ),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _saving ? null : _save,
-                  child: Text(
-                    _saving ? 'Saving...' : 'Save',
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

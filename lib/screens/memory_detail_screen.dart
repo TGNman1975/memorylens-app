@@ -11,10 +11,7 @@ import '../utils/date_formatter.dart';
 import 'add_memory_screen.dart';
 
 class MemoryDetailScreen extends StatelessWidget {
-  const MemoryDetailScreen({
-    super.key,
-    required this.memory,
-  });
+  const MemoryDetailScreen({super.key, required this.memory});
 
   final Memory memory;
 
@@ -37,12 +34,87 @@ class MemoryDetailScreen extends StatelessWidget {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Unable to update favourite. Please try again.',
-          ),
+          content: Text('Unable to update favourite. Please try again.'),
         ),
       );
     }
+  }
+
+  Future<DateTime?> _showReminderInput(
+    BuildContext context,
+    DateTime initialDate,
+    DateTime firstDate,
+    DateTime lastDate,
+  ) {
+    final formKey = GlobalKey<FormState>();
+    DateTime? date;
+    var hour = initialDate.hour;
+    var minute = initialDate.minute;
+    String? validateTimePart(String? value, int maximum) {
+      final number = int.tryParse(value?.trim() ?? '');
+      return number != null && number >= 0 && number <= maximum
+          ? null
+          : 'Enter 0–$maximum.';
+    }
+
+    return showDialog<DateTime>(
+      context: context,
+      builder: (context) => AlertDialog(
+        scrollable: true,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        title: const Text('Reminder'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              InputDatePickerFormField(
+                initialDate: initialDate,
+                firstDate: firstDate,
+                lastDate: lastDate,
+                onDateSaved: (value) => date = value,
+              ),
+              const SizedBox(height: 16),
+              const Text('24-hour time'),
+              TextFormField(
+                initialValue: hour.toString(),
+                decoration: const InputDecoration(labelText: 'Hour'),
+                keyboardType: TextInputType.number,
+                validator: (value) => validateTimePart(value, 23),
+                onSaved: (value) => hour = int.parse(value!.trim()),
+              ),
+              TextFormField(
+                initialValue: minute.toString().padLeft(2, '0'),
+                decoration: const InputDecoration(labelText: 'Minute'),
+                keyboardType: TextInputType.number,
+                validator: (value) => validateTimePart(value, 59),
+                onSaved: (value) => minute = int.parse(value!.trim()),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final form = formKey.currentState!;
+              if (!form.validate()) return;
+              form.save();
+              final day = date!;
+              Navigator.pop(
+                context,
+                DateTime(day.year, day.month, day.day, hour, minute),
+              );
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _setReminder(BuildContext context) async {
@@ -57,54 +129,49 @@ class MemoryDetailScreen extends StatelessWidget {
 
     final initialDate =
         currentMemory.reminderAt != null &&
-                currentMemory.reminderAt!.isAfter(now)
-            ? currentMemory.reminderAt!
-            : now.add(const Duration(hours: 1));
+            currentMemory.reminderAt!.isAfter(now)
+        ? currentMemory.reminderAt!
+        : now.add(const Duration(hours: 1));
 
-    final selectedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime(
-        initialDate.year,
-        initialDate.month,
-        initialDate.day,
-      ),
-      firstDate: DateTime(
-        now.year,
-        now.month,
-        now.day,
-      ),
-      lastDate: DateTime(now.year + 10),
-    );
-
-    if (selectedDate == null || !context.mounted) {
-      return;
+    final compactPicker =
+        MediaQuery.sizeOf(context).width < 350 ||
+        MediaQuery.textScalerOf(context).scale(16) > 24;
+    final firstDate = DateUtils.dateOnly(now);
+    final lastDate = DateTime(now.year + 10);
+    final DateTime? reminderAt;
+    if (compactPicker) {
+      reminderAt = await _showReminderInput(
+        context,
+        initialDate,
+        firstDate,
+        lastDate,
+      );
+    } else {
+      final selectedDate = await showDatePicker(
+        context: context,
+        initialDate: DateUtils.dateOnly(initialDate),
+        firstDate: firstDate,
+        lastDate: lastDate,
+      );
+      if (selectedDate == null || !context.mounted) return;
+      final selectedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(initialDate),
+      );
+      if (selectedTime == null || !context.mounted) return;
+      reminderAt = DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+        selectedTime.hour,
+        selectedTime.minute,
+      );
     }
-
-    final selectedTime = await showTimePicker(
-      context: context,
-      initialTime:
-          TimeOfDay.fromDateTime(initialDate),
-    );
-
-    if (selectedTime == null || !context.mounted) {
-      return;
-    }
-
-    final reminderAt = DateTime(
-      selectedDate.year,
-      selectedDate.month,
-      selectedDate.day,
-      selectedTime.hour,
-      selectedTime.minute,
-    );
+    if (reminderAt == null || !context.mounted) return;
 
     if (reminderAt.isBefore(now)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please choose a future date and time.',
-          ),
-        ),
+        const SnackBar(content: Text('Please choose a future date and time.')),
       );
       return;
     }
@@ -114,15 +181,13 @@ class MemoryDetailScreen extends StatelessWidget {
         '${reminderAt.month.toString().padLeft(2, '0')}/'
         '${reminderAt.year}';
 
-    final timeText =
-        TimeOfDay.fromDateTime(reminderAt).format(
-      context,
-    );
+    final timeText = TimeOfDay.fromDateTime(reminderAt).format(context);
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
+          scrollable: true,
           title: const Text('Save Reminder?'),
           content: Text(
             'Remind you about "${currentMemory.title}" '
@@ -130,13 +195,11 @@ class MemoryDetailScreen extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () =>
-                  Navigator.pop(dialogContext, false),
+              onPressed: () => Navigator.pop(dialogContext, false),
               child: const Text('Cancel'),
             ),
             FilledButton(
-              onPressed: () =>
-                  Navigator.pop(dialogContext, true),
+              onPressed: () => Navigator.pop(dialogContext, true),
               child: const Text('Save Reminder'),
             ),
           ],
@@ -165,17 +228,11 @@ class MemoryDetailScreen extends StatelessWidget {
     if (!context.mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Reminder saved for $dateText at $timeText.',
-        ),
-      ),
+      SnackBar(content: Text('Reminder saved for $dateText at $timeText.')),
     );
   }
 
-  Future<void> _removeReminder(
-    BuildContext context,
-  ) async {
+  Future<void> _removeReminder(BuildContext context) async {
     final provider = context.read<MemoryProvider>();
 
     final currentMemory = provider.memories.firstWhere(
@@ -187,19 +244,16 @@ class MemoryDetailScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
+          scrollable: true,
           title: const Text('Remove Reminder?'),
-          content: const Text(
-            'This reminder will no longer notify you.',
-          ),
+          content: const Text('This reminder will no longer notify you.'),
           actions: [
             TextButton(
-              onPressed: () =>
-                  Navigator.pop(dialogContext, false),
+              onPressed: () => Navigator.pop(dialogContext, false),
               child: const Text('Keep'),
             ),
             FilledButton(
-              onPressed: () =>
-                  Navigator.pop(dialogContext, true),
+              onPressed: () => Navigator.pop(dialogContext, true),
               child: const Text('Remove'),
             ),
           ],
@@ -211,9 +265,7 @@ class MemoryDetailScreen extends StatelessWidget {
       return;
     }
 
-    await NotificationService.cancelReminder(
-      currentMemory.id,
-    );
+    await NotificationService.cancelReminder(currentMemory.id);
 
     if (!context.mounted) return;
 
@@ -227,35 +279,28 @@ class MemoryDetailScreen extends StatelessWidget {
 
     if (!context.mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Reminder removed.'),
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Reminder removed.')));
   }
 
-  String _formatReminder(
-    BuildContext context,
-    DateTime reminder,
-  ) {
+  String _formatReminder(BuildContext context, DateTime reminder) {
     final date =
         '${reminder.day.toString().padLeft(2, '0')}/'
         '${reminder.month.toString().padLeft(2, '0')}/'
         '${reminder.year}';
 
-    final time =
-        TimeOfDay.fromDateTime(reminder).format(context);
+    final time = TimeOfDay.fromDateTime(reminder).format(context);
 
     return '$date at $time';
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentMemory =
-        context.watch<MemoryProvider>().memories.firstWhere(
-              (item) => item.id == memory.id,
-              orElse: () => memory,
-            );
+    final currentMemory = context.watch<MemoryProvider>().memories.firstWhere(
+      (item) => item.id == memory.id,
+      orElse: () => memory,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -265,334 +310,257 @@ class MemoryDetailScreen extends StatelessWidget {
             tooltip: currentMemory.favourite
                 ? 'Remove from favourites'
                 : 'Add to favourites',
-            onPressed: () => _toggleFavourite(
-              context,
-              currentMemory,
-            ),
+            onPressed: () => _toggleFavourite(context, currentMemory),
             icon: Icon(
-              currentMemory.favourite
-                  ? Icons.star
-                  : Icons.star_border,
+              currentMemory.favourite ? Icons.star : Icons.star_border,
             ),
           ),
         ],
       ),
-      body: ListView(
-        children: [
-          _buildImage(context, currentMemory),
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                Text(
-                  currentMemory.title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineMedium,
-                ),
-                const SizedBox(height: 12),
+      body: SafeArea(
+        child: ListView(
+          children: [
+            _buildImage(context, currentMemory),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    currentMemory.title,
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 12),
 
-                if (currentMemory.favourite)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+                  if (currentMemory.favourite)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade100,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.star, size: 18, color: Colors.amber),
+                          SizedBox(width: 6),
+                          Text('Favourite'),
+                        ],
+                      ),
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.shade100,
-                      borderRadius:
-                          BorderRadius.circular(20),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.star,
-                          size: 18,
-                          color: Colors.amber,
-                        ),
-                        SizedBox(width: 6),
-                        Text('Favourite'),
-                      ],
+
+                  const SizedBox(height: 24),
+
+                  Text(
+                    'Created',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(DateFormatter.format(currentMemory.createdAt)),
+
+                  const SizedBox(height: 24),
+
+                  Text('Notes', style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: 8),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        (currentMemory.note ?? '').isEmpty
+                            ? 'No notes were added.'
+                            : currentMemory.note!,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
                     ),
                   ),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                Text(
-                  'Created',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  DateFormatter.format(
-                    currentMemory.createdAt,
+                  Text(
+                    'Reminder',
+                    style: Theme.of(context).textTheme.titleSmall,
                   ),
-                ),
+                  const SizedBox(height: 8),
 
-                const SizedBox(height: 24),
-
-                Text(
-                  'Notes',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall,
-                ),
-                const SizedBox(height: 8),
-                Card(
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.all(16),
-                    child: Text(
-                      (currentMemory.note ?? '')
-                              .isEmpty
-                          ? 'No notes were added.'
-                          : currentMemory.note!,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyLarge,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                Text(
-                  'Reminder',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall,
-                ),
-                const SizedBox(height: 8),
-
-                Card(
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        if (currentMemory.reminderAt ==
-                            null) ...[
-                          const Row(
-                            children: [
-                              Icon(
-                                Icons.notifications_none,
-                              ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  'No reminder set',
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (currentMemory.reminderAt == null) ...[
+                            const Row(
+                              children: [
+                                Icon(Icons.notifications_none),
+                                SizedBox(width: 12),
+                                Expanded(child: Text('No reminder set')),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                          ] else ...[
+                            Row(
+                              children: [
+                                const Icon(Icons.notifications_active),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    _formatReminder(
+                                      context,
+                                      currentMemory.reminderAt!,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                        ] else ...[
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+
                           Row(
                             children: [
-                              const Icon(
-                                Icons.notifications_active,
-                              ),
-                              const SizedBox(width: 12),
                               Expanded(
-                                child: Text(
-                                  _formatReminder(
-                                    context,
-                                    currentMemory.reminderAt!,
+                                child: FilledButton.icon(
+                                  onPressed: () => _setReminder(context),
+                                  icon: const Icon(Icons.notifications),
+                                  label: Text(
+                                    currentMemory.reminderAt == null
+                                        ? 'Set Reminder'
+                                        : 'Change Reminder',
                                   ),
                                 ),
                               ),
+                              if (currentMemory.reminderAt != null) ...[
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  tooltip: 'Remove reminder',
+                                  onPressed: () => _removeReminder(context),
+                                  icon: const Icon(Icons.delete_outline),
+                                ),
+                              ],
                             ],
                           ),
-                          const SizedBox(height: 12),
                         ],
+                      ),
+                    ),
+                  ),
 
-                        Row(
-                          children: [
-                            Expanded(
-                              child: FilledButton.icon(
-                                onPressed: () =>
-                                    _setReminder(context),
-                                icon: const Icon(
-                                  Icons.notifications,
-                                ),
-                                label: Text(
-                                  currentMemory.reminderAt ==
-                                          null
-                                      ? 'Set Reminder'
-                                      : 'Change Reminder',
-                                ),
-                              ),
+                  const SizedBox(height: 32),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () async {
+                        final imageFile =
+                            await ImageStorageService.resolveImageFile(
+                              currentMemory.imagePath,
+                            );
+
+                        if (!context.mounted) return;
+
+                        final updated = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AddMemoryScreen(
+                              image: imageFile,
+                              memory: currentMemory,
                             ),
-                            if (currentMemory.reminderAt !=
-                                null) ...[
-                              const SizedBox(width: 8),
-                              IconButton(
-                                tooltip: 'Remove reminder',
+                          ),
+                        );
+
+                        if (!context.mounted) return;
+
+                        if (updated == true) {
+                          await context.read<MemoryProvider>().loadMemories();
+                        }
+                      },
+                      icon: const Icon(Icons.edit),
+                      label: const Text('Edit Memory'),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: const Icon(Icons.delete),
+                      label: const Text('Delete Memory'),
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (dialogContext) => AlertDialog(
+                            scrollable: true,
+                            title: const Text('Delete Memory'),
+                            content: const Text(
+                              'Are you sure you want to permanently '
+                              'delete this memory?',
+                            ),
+                            actions: [
+                              TextButton(
                                 onPressed: () =>
-                                    _removeReminder(context),
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                ),
+                                    Navigator.pop(dialogContext, false),
+                                child: const Text('Cancel'),
+                              ),
+                              FilledButton(
+                                onPressed: () =>
+                                    Navigator.pop(dialogContext, true),
+                                child: const Text('Delete'),
                               ),
                             ],
-                          ],
-                        ),
-                      ],
+                          ),
+                        );
+
+                        if (confirm != true || !context.mounted) {
+                          return;
+                        }
+
+                        await context.read<MemoryProvider>().deleteMemory(
+                          currentMemory.id,
+                        );
+
+                        if (!context.mounted) return;
+
+                        Navigator.pop(context, true);
+                      },
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 32),
+                  const SizedBox(height: 12),
 
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: () async {
-                      final imageFile =
-                          await ImageStorageService
-                              .resolveImageFile(
-                        currentMemory.imagePath,
-                      );
-
-                      if (!context.mounted) return;
-
-                      final updated =
-                          await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AddMemoryScreen(
-                            image: imageFile,
-                            memory: currentMemory,
-                          ),
-                        ),
-                      );
-
-                      if (!context.mounted) return;
-
-                      if (updated == true) {
-                        await context
-                            .read<MemoryProvider>()
-                            .loadMemories();
-                      }
-                    },
-                    icon: const Icon(Icons.edit),
-                    label: const Text('Edit Memory'),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor:
-                          Theme.of(context)
-                              .colorScheme
-                              .error,
-                      foregroundColor: Colors.white,
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      icon: const Icon(Icons.arrow_back),
+                      label: const Text('Back'),
                     ),
-                    icon: const Icon(Icons.delete),
-                    label:
-                        const Text('Delete Memory'),
-                    onPressed: () async {
-                      final confirm =
-                          await showDialog<bool>(
-                        context: context,
-                        builder: (dialogContext) =>
-                            AlertDialog(
-                          title:
-                              const Text('Delete Memory'),
-                          content: const Text(
-                            'Are you sure you want to permanently '
-                            'delete this memory?',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () =>
-                                  Navigator.pop(
-                                dialogContext,
-                                false,
-                              ),
-                              child:
-                                  const Text('Cancel'),
-                            ),
-                            FilledButton(
-                              onPressed: () =>
-                                  Navigator.pop(
-                                dialogContext,
-                                true,
-                              ),
-                              child:
-                                  const Text('Delete'),
-                            ),
-                          ],
-                        ),
-                      );
-
-                      if (confirm != true ||
-                          !context.mounted) {
-                        return;
-                      }
-
-                      await context
-                          .read<MemoryProvider>()
-                          .deleteMemory(
-                            currentMemory.id,
-                          );
-
-                      if (!context.mounted) return;
-
-                      Navigator.pop(context, true);
-                    },
                   ),
-                ),
-
-                const SizedBox(height: 12),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    icon:
-                        const Icon(Icons.arrow_back),
-                    label: const Text('Back'),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildImage(
-    BuildContext context,
-    Memory currentMemory,
-  ) {
-    if (currentMemory.imagePath == null ||
-        currentMemory.imagePath!.isEmpty) {
+  Widget _buildImage(BuildContext context, Memory currentMemory) {
+    if (currentMemory.imagePath == null || currentMemory.imagePath!.isEmpty) {
       return _imagePlaceholder(context);
     }
 
     return FutureBuilder<File?>(
-      future: ImageStorageService.resolveImageFile(
-        currentMemory.imagePath,
-      ),
+      future: ImageStorageService.resolveImageFile(currentMemory.imagePath),
       builder: (context, snapshot) {
-        if (!snapshot.hasData ||
-            snapshot.data == null) {
+        if (!snapshot.hasData || snapshot.data == null) {
           return _imagePlaceholder(context);
         }
 
@@ -601,11 +569,7 @@ class MemoryDetailScreen extends StatelessWidget {
           width: double.infinity,
           height: 300,
           fit: BoxFit.cover,
-          errorBuilder: (
-            context,
-            error,
-            stackTrace,
-          ) {
+          errorBuilder: (context, error, stackTrace) {
             return _imagePlaceholder(context);
           },
         );
@@ -613,20 +577,11 @@ class MemoryDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _imagePlaceholder(
-    BuildContext context,
-  ) {
+  Widget _imagePlaceholder(BuildContext context) {
     return Container(
       height: 300,
-      color: Theme.of(context)
-          .colorScheme
-          .surfaceContainerHighest,
-      child: const Center(
-        child: Icon(
-          Icons.sticky_note_2_outlined,
-          size: 100,
-        ),
-      ),
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: const Center(child: Icon(Icons.sticky_note_2_outlined, size: 100)),
     );
   }
 }

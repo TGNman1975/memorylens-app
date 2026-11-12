@@ -10,54 +10,35 @@ class StatisticsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<MemoryProvider>();
 
-    Widget statTile(
-      IconData icon,
-      String title,
-      int value,
-    ) {
+    Widget statTile(IconData icon, String title, int value) {
       return Card(
         child: ListTile(
           leading: Icon(icon),
           title: Text(title),
-          trailing: Text(
+          subtitle: Text(
             value.toString(),
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
         ),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Statistics'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          statTile(
-            Icons.apps,
-            'Total Memories',
-            provider.totalMemories,
-          ),
-          statTile(
-            Icons.photo,
-            'Photos',
-            provider.photoCount,
-          ),
-          statTile(
-            Icons.sticky_note_2_outlined,
-            'Quick Notes',
-            provider.quickNoteCount,
-          ),
-          statTile(
-            Icons.star,
-            'Favourites',
-            provider.favouriteCount,
-          ),
-        ],
+      appBar: AppBar(title: const Text('Statistics')),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            statTile(Icons.apps, 'Total Memories', provider.totalMemories),
+            statTile(Icons.photo, 'Photos', provider.photoCount),
+            statTile(
+              Icons.sticky_note_2_outlined,
+              'Quick Notes',
+              provider.quickNoteCount,
+            ),
+            statTile(Icons.star, 'Favourites', provider.favouriteCount),
+          ],
+        ),
       ),
     );
   }

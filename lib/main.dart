@@ -9,8 +9,7 @@ import 'screens/memory_detail_screen.dart';
 import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
 
-final GlobalKey<NavigatorState> navigatorKey =
-    GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,12 +21,9 @@ Future<void> main() async {
   final launchDetails =
       await NotificationService.getNotificationAppLaunchDetails();
 
-  final launchedMemoryId =
-      launchDetails?.didNotificationLaunchApp == true
-          ? int.tryParse(
-              launchDetails?.notificationResponse?.payload ?? '',
-            )
-          : null;
+  final launchedMemoryId = launchDetails?.didNotificationLaunchApp == true
+      ? int.tryParse(launchDetails?.notificationResponse?.payload ?? '')
+      : null;
 
   final database = AppDatabase();
   final repository = MemoryRepository(database);
@@ -35,9 +31,7 @@ Future<void> main() async {
   runApp(
     ChangeNotifierProvider(
       create: (_) => MemoryProvider(repository)..loadMemories(),
-      child: MemoryLensApp(
-        initialMemoryId: launchedMemoryId,
-      ),
+      child: MemoryLensApp(initialMemoryId: launchedMemoryId),
     ),
   );
 }
@@ -61,19 +55,12 @@ void _openMemoryFromNotification(int memoryId) {
   if (memory == null) return;
 
   navigatorKey.currentState?.push(
-    MaterialPageRoute(
-      builder: (_) => MemoryDetailScreen(
-        memory: memory!,
-      ),
-    ),
+    MaterialPageRoute(builder: (_) => MemoryDetailScreen(memory: memory!)),
   );
 }
 
 class MemoryLensApp extends StatefulWidget {
-  const MemoryLensApp({
-    super.key,
-    this.initialMemoryId,
-  });
+  const MemoryLensApp({super.key, this.initialMemoryId});
 
   final int? initialMemoryId;
 
@@ -112,6 +99,23 @@ class _MemoryLensAppState extends State<MemoryLensApp> {
       title: 'MemoryLens',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
+      builder: (context, child) {
+        final theme = Theme.of(context);
+        final titleSize =
+            theme.appBarTheme.titleTextStyle?.fontSize ??
+            theme.textTheme.titleLarge?.fontSize ??
+            22;
+        final height =
+            MediaQuery.textScalerOf(context).scale(titleSize) * 1.3 + 16;
+        return Theme(
+          data: theme.copyWith(
+            appBarTheme: theme.appBarTheme.copyWith(
+              toolbarHeight: height.clamp(kToolbarHeight, double.infinity),
+            ),
+          ),
+          child: child!,
+        );
+      },
       home: const HomeScreen(),
     );
   }

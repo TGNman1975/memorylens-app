@@ -16,7 +16,7 @@ class MemoryCard extends StatelessWidget {
 
   final Memory memory;
   final VoidCallback onTap;
-  final VoidCallback onDelete;
+  final Future<void> Function() onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -26,30 +26,31 @@ class MemoryCard extends StatelessWidget {
       key: ValueKey(memory.id),
       direction: DismissDirection.endToStart,
       confirmDismiss: (_) async {
-        return await showDialog<bool>(
+        final confirmed =
+            await showDialog<bool>(
               context: context,
               builder: (_) => AlertDialog(
+                scrollable: true,
                 title: const Text('Delete Memory'),
                 content: const Text(
                   'Are you sure you want to delete this memory?',
                 ),
                 actions: [
                   TextButton(
-                    onPressed: () =>
-                        Navigator.pop(context, false),
+                    onPressed: () => Navigator.pop(context, false),
                     child: const Text('Cancel'),
                   ),
                   FilledButton(
-                    onPressed: () =>
-                        Navigator.pop(context, true),
+                    onPressed: () => Navigator.pop(context, true),
                     child: const Text('Delete'),
                   ),
                 ],
               ),
             ) ??
             false;
+        if (confirmed) await onDelete();
+        return false;
       },
-      onDismissed: (_) => onDelete(),
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 24),
@@ -58,10 +59,7 @@ class MemoryCard extends StatelessWidget {
           color: theme.colorScheme.error,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Icon(
-          Icons.delete_outline,
-          color: Colors.white,
-        ),
+        child: const Icon(Icons.delete_outline, color: Colors.white),
       ),
       child: Card(
         margin: const EdgeInsets.only(bottom: 12),
@@ -77,32 +75,25 @@ class MemoryCard extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
                           Expanded(
                             child: Text(
                               memory.title,
-                              style: theme
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    fontWeight:
-                                        FontWeight.bold,
-                                  ),
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                               maxLines: 2,
-                              overflow:
-                                  TextOverflow.ellipsis,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           if (memory.favourite) ...[
                             const SizedBox(width: 8),
                             Icon(
                               Icons.star,
-                              color:
-                                  theme.colorScheme.primary,
+                              color: theme.colorScheme.primary,
                               size: 20,
                             ),
                           ],
@@ -114,20 +105,14 @@ class MemoryCard extends StatelessWidget {
                           memory.note!,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style:
-                              theme.textTheme.bodyMedium,
+                          style: theme.textTheme.bodyMedium,
                         ),
                       ],
                       const SizedBox(height: 8),
                       Text(
-                        DateFormatter.format(
-                          memory.createdAt,
-                        ),
-                        style:
-                            theme.textTheme.bodySmall
-                                ?.copyWith(
-                          color: theme.colorScheme
-                              .onSurfaceVariant,
+                        DateFormatter.format(memory.createdAt),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -142,18 +127,14 @@ class MemoryCard extends StatelessWidget {
   }
 
   Widget _buildThumbnail(BuildContext context) {
-    if (memory.imagePath == null ||
-        memory.imagePath!.isEmpty) {
+    if (memory.imagePath == null || memory.imagePath!.isEmpty) {
       return _placeholder(context);
     }
 
     return FutureBuilder<File?>(
-      future: ImageStorageService.resolveImageFile(
-        memory.imagePath,
-      ),
+      future: ImageStorageService.resolveImageFile(memory.imagePath),
       builder: (context, snapshot) {
-        if (!snapshot.hasData ||
-            snapshot.data == null) {
+        if (!snapshot.hasData || snapshot.data == null) {
           return _placeholder(context);
         }
 
@@ -164,11 +145,7 @@ class MemoryCard extends StatelessWidget {
             width: 72,
             height: 72,
             fit: BoxFit.cover,
-            errorBuilder: (
-              context,
-              error,
-              stackTrace,
-            ) {
+            errorBuilder: (context, error, stackTrace) {
               return _placeholder(context);
             },
           ),
@@ -183,16 +160,12 @@ class MemoryCard extends StatelessWidget {
       height: 72,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
       ),
       child: Icon(
         Icons.sticky_note_2_outlined,
         size: 32,
-        color: Theme.of(context)
-            .colorScheme
-            .onSurfaceVariant,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
     );
   }

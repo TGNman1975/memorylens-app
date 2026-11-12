@@ -19,11 +19,7 @@ import 'quick_note_screen.dart';
 import 'settings_screen.dart';
 import 'folders_screen.dart';
 
-enum MemorySort {
-  newest,
-  oldest,
-  favourites,
-}
+enum MemorySort { newest, oldest, favourites }
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -35,6 +31,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final CameraService _camera = CameraService();
 
+  final _searchController = TextEditingController();
   String _query = '';
   String? _filter;
   MemorySort _sort = MemorySort.newest;
@@ -48,10 +45,18 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _showNewMemorySheet() async {
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
+      useSafeArea: true,
       builder: (_) => NewMemoryBottomSheet(
         onTakePhoto: () {
           Navigator.pop(context);
@@ -76,11 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final result = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
-        builder: (_) => AddMemoryScreen(
-          image: image,
-        ),
-      ),
+      MaterialPageRoute(builder: (_) => AddMemoryScreen(image: image)),
     );
 
     if (result == true && mounted) {
@@ -95,11 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final result = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
-        builder: (_) => AddMemoryScreen(
-          image: file,
-        ),
-      ),
+      MaterialPageRoute(builder: (_) => AddMemoryScreen(image: file)),
     );
 
     if (!mounted) return;
@@ -112,9 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _quickNote() async {
     final saved = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
-        builder: (_) => const QuickNoteScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const QuickNoteScreen()),
     );
 
     if (!mounted) return;
@@ -124,17 +119,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Widget _buildEmptyState(
-    BuildContext context,
-  ) {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          24,
-          24,
-          24,
-          40,
-        ),
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -157,27 +145,19 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               'Save it. Forget it.',
               textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Text(
               'MemoryLens stores your memories, '
               'so you don’t have to.',
               textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyLarge
-                  ?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurfaceVariant,
-                    height: 1.4,
-                  ),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
             ),
             const SizedBox(height: 28),
             SizedBox(
@@ -185,9 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: FilledButton.icon(
                 onPressed: _showNewMemorySheet,
                 icon: const Icon(Icons.add),
-                label: const Text(
-                  'Create Your First Memory',
-                ),
+                label: const Text('Create Your First Memory'),
               ),
             ),
             const SizedBox(height: 28),
@@ -243,27 +221,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
     switch (_sort) {
       case MemorySort.newest:
-        memories.sort(
-          (a, b) => b.createdAt.compareTo(a.createdAt),
-        );
+        memories.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         break;
 
       case MemorySort.oldest:
-        memories.sort(
-          (a, b) => a.createdAt.compareTo(b.createdAt),
-        );
+        memories.sort((a, b) => a.createdAt.compareTo(b.createdAt));
         break;
 
       case MemorySort.favourites:
-        memories.sort(
-          (a, b) {
-            if (a.favourite == b.favourite) {
-              return b.createdAt.compareTo(a.createdAt);
-            }
+        memories.sort((a, b) {
+          if (a.favourite == b.favourite) {
+            return b.createdAt.compareTo(a.createdAt);
+          }
 
-            return a.favourite ? -1 : 1;
-          },
-        );
+          return a.favourite ? -1 : 1;
+        });
         break;
     }
 
@@ -271,7 +243,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MemoryLens'),
+        title: const Text(
+          'MemoryLens',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
           IconButton(
             tooltip: 'Folders',
@@ -290,14 +266,8 @@ class _HomeScreenState extends State<HomeScreen> {
               });
             },
             itemBuilder: (_) => const [
-              PopupMenuItem(
-                value: MemorySort.newest,
-                child: Text('Newest'),
-              ),
-              PopupMenuItem(
-                value: MemorySort.oldest,
-                child: Text('Oldest'),
-              ),
+              PopupMenuItem(value: MemorySort.newest, child: Text('Newest')),
+              PopupMenuItem(value: MemorySort.oldest, child: Text('Oldest')),
               PopupMenuItem(
                 value: MemorySort.favourites,
                 child: Text('Favourites First'),
@@ -310,9 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const SettingsScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
               );
             },
           ),
@@ -320,154 +288,132 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: SafeArea(
         child: hasMemories
-            ? Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      16,
-                      12,
-                      16,
-                      0,
+            ? HomeMemoryList(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                header: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const AppHeader(),
+
+                    const SizedBox(height: 8),
+
+                    MemorySearchBar(
+                      controller: _searchController,
+                      onChanged: (value) {
+                        setState(() {
+                          _query = value;
+                        });
+                      },
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const AppHeader(),
 
-                        const SizedBox(height: 8),
+                    const SizedBox(height: 8),
 
-                        MemorySearchBar(
-                          onChanged: (value) {
-                            setState(() {
-                              _query = value;
-                            });
-                          },
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        Row(
-                          children: [
-                            Expanded(
-                              child: MemoryStatsCard(
-                                label: 'All',
-                                value: provider.totalMemories,
-                                icon: Icons.apps,
-                                onTap: () {
-                                  setState(() {
-                                    _filter = null;
-                                  });
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: MemoryStatsCard(
-                                label: 'Photos',
-                                value: provider.photoCount,
-                                icon: Icons.photo,
-                                onTap: () {
-                                  setState(() {
-                                    _filter =
-                                        _filter == 'photos'
-                                            ? null
-                                            : 'photos';
-                                  });
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: MemoryStatsCard(
-                                label: 'Notes',
-                                value: provider.quickNoteCount,
-                                icon:
-                                    Icons.sticky_note_2_outlined,
-                                onTap: () {
-                                  setState(() {
-                                    _filter =
-                                        _filter == 'notes'
-                                            ? null
-                                            : 'notes';
-                                  });
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: MemoryStatsCard(
-                                label: 'Favs',
-                                value: provider.favouriteCount,
-                                icon: Icons.star,
-                                onTap: () {
-                                  setState(() {
-                                    _filter =
-                                        _filter == 'favourites'
-                                            ? null
-                                            : 'favourites';
-                                  });
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        NewMemoryButton(
-                          onPressed: _showNewMemorySheet,
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        const Align(
-                          alignment: Alignment.centerLeft,
-                          child: SectionTitle(
-                            title: 'Memories',
-                          ),
-                        ),
-
-                        const SizedBox(height: 4),
-                      ],
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final columns =
+                            MediaQuery.textScalerOf(context).scale(14) > 21 ||
+                                constraints.maxWidth < 300
+                            ? 2
+                            : 4;
+                        return Wrap(
+                          spacing: 6,
+                          children:
+                              [
+                                    MemoryStatsCard(
+                                      label: 'All',
+                                      value: provider.totalMemories,
+                                      icon: Icons.apps,
+                                      onTap: () {
+                                        setState(() {
+                                          _filter = null;
+                                        });
+                                      },
+                                    ),
+                                    MemoryStatsCard(
+                                      label: 'Photos',
+                                      value: provider.photoCount,
+                                      icon: Icons.photo,
+                                      onTap: () {
+                                        setState(() {
+                                          _filter = _filter == 'photos'
+                                              ? null
+                                              : 'photos';
+                                        });
+                                      },
+                                    ),
+                                    MemoryStatsCard(
+                                      label: 'Notes',
+                                      value: provider.quickNoteCount,
+                                      icon: Icons.sticky_note_2_outlined,
+                                      onTap: () {
+                                        setState(() {
+                                          _filter = _filter == 'notes'
+                                              ? null
+                                              : 'notes';
+                                        });
+                                      },
+                                    ),
+                                    MemoryStatsCard(
+                                      label: 'Favs',
+                                      value: provider.favouriteCount,
+                                      icon: Icons.star,
+                                      onTap: () {
+                                        setState(() {
+                                          _filter = _filter == 'favourites'
+                                              ? null
+                                              : 'favourites';
+                                        });
+                                      },
+                                    ),
+                                  ]
+                                  .map(
+                                    (card) => SizedBox(
+                                      width:
+                                          (constraints.maxWidth -
+                                              (columns - 1) * 6) /
+                                          columns,
+                                      child: card,
+                                    ),
+                                  )
+                                  .toList(),
+                        );
+                      },
                     ),
-                  ),
 
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                      ),
-                      child: HomeMemoryList(
-                        memories: memories,
-                        onTap: (memory) async {
-                          final updated =
-                              await Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  MemoryDetailScreen(
-                                memory: memory,
-                              ),
-                            ),
-                          );
+                    const SizedBox(height: 8),
 
-                          if (!mounted) {
-                            return;
-                          }
+                    NewMemoryButton(onPressed: _showNewMemorySheet),
 
-                          if (updated == true) {
-                            await provider.loadMemories();
-                          }
-                        },
-                        onDelete: (memory) async {
-                          await provider.deleteMemory(
-                            memory.id,
-                          );
-                        },
-                      ),
+                    const SizedBox(height: 12),
+
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: SectionTitle(title: 'Memories'),
                     ),
-                  ),
-                ],
+
+                    const SizedBox(height: 4),
+                  ],
+                ),
+                memories: memories,
+                onTap: (memory) async {
+                  final updated = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => MemoryDetailScreen(memory: memory),
+                    ),
+                  );
+
+                  if (!mounted) {
+                    return;
+                  }
+
+                  if (updated == true) {
+                    await provider.loadMemories();
+                  }
+                },
+                onDelete: (memory) async {
+                  await provider.deleteMemory(memory.id);
+                },
               )
             : _buildEmptyState(context),
       ),
@@ -492,39 +438,25 @@ class _EmptyStateTip extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 24,
-          ),
+          Icon(icon, size: 24),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  text,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall,
-                ),
+                Text(text, style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),
