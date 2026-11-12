@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/memory_provider.dart';
+import 'folders_screen.dart';
 
 class QuickNoteScreen extends StatefulWidget {
   const QuickNoteScreen({super.key});
@@ -15,6 +16,7 @@ class _QuickNoteScreenState extends State<QuickNoteScreen> {
   final _noteController = TextEditingController();
 
   bool _favourite = false;
+  int? _folderId;
   bool _saving = false;
 
   @override
@@ -59,6 +61,7 @@ class _QuickNoteScreenState extends State<QuickNoteScreen> {
             title: title,
             note: note.isEmpty ? null : note,
             favourite: _favourite,
+            folderId: _folderId,
           );
 
       if (!mounted) return;
@@ -98,6 +101,10 @@ class _QuickNoteScreenState extends State<QuickNoteScreen> {
                   hintText: 'Optional',
                   border: OutlineInputBorder(),
                 ),
+              ),
+              FolderField(
+                id: _folderId,
+                onChanged: _saving ? null : (id) => setState(() => _folderId = id),
               ),
               const SizedBox(height: 16),
               TextField(

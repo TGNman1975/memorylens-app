@@ -1,20 +1,18 @@
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../database/app_database.dart';
 import '../providers/memory_provider.dart';
+import 'folders_screen.dart';
 
 class AddMemoryScreen extends StatefulWidget {
   final File? image;
   final Memory? memory;
 
-  const AddMemoryScreen({
-    super.key,
-    this.image,
-    this.memory,
-  });
+  const AddMemoryScreen({super.key, this.image, this.memory});
 
   @override
   State<AddMemoryScreen> createState() => _AddMemoryScreenState();
@@ -24,6 +22,7 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
   late final TextEditingController _titleController;
   late final TextEditingController _noteController;
 
+  int? _folderId;
   bool _saving = false;
   bool _favourite = false;
 
@@ -33,14 +32,11 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
   void initState() {
     super.initState();
 
-    _titleController = TextEditingController(
-      text: widget.memory?.title ?? '',
-    );
+    _titleController = TextEditingController(text: widget.memory?.title ?? '');
 
-    _noteController = TextEditingController(
-      text: widget.memory?.note ?? '',
-    );
+    _noteController = TextEditingController(text: widget.memory?.note ?? '');
 
+    _folderId = widget.memory?.folderId;
     _favourite = widget.memory?.favourite ?? false;
   }
 
@@ -56,11 +52,9 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
     final note = _noteController.text.trim();
 
     if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a title'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter a title')));
       return;
     }
 
@@ -74,6 +68,7 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
       if (_editing) {
         await provider.updateMemory(
           existing: widget.memory!,
+          folderId: Value(_folderId),
           title: title,
           note: note.isEmpty ? null : note,
           favourite: _favourite,
@@ -84,6 +79,7 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
           title: title,
           note: note.isEmpty ? null : note,
           imagePath: widget.image?.path,
+          folderId: _folderId,
           favourite: _favourite,
         );
       }
@@ -109,11 +105,7 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _editing ? 'Edit Memory' : 'New Memory',
-        ),
-      ),
+      appBar: AppBar(title: Text(_editing ? 'Edit Memory' : 'New Memory')),
       body: SafeArea(
         child: Column(
           children: [
@@ -155,6 +147,12 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    FolderField(
+                      id: _folderId,
+                      onChanged: _saving
+                          ? null
+                          : (id) => setState(() => _folderId = id),
+                    ),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       value: _favourite,
@@ -180,15 +178,11 @@ class _AddMemoryScreenState extends State<AddMemoryScreen> {
                   width: double.infinity,
                   child: FilledButton.icon(
                     onPressed: _saving ? null : _saveMemory,
-                    icon: Icon(
-                      _editing ? Icons.save : Icons.add,
-                    ),
+                    icon: Icon(_editing ? Icons.save : Icons.add),
                     label: Text(
                       _saving
                           ? 'Saving...'
-                          : (_editing
-                              ? 'Save Changes'
-                              : 'Save Memory'),
+                          : (_editing ? 'Save Changes' : 'Save Memory'),
                     ),
                   ),
                 ),

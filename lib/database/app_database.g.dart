@@ -3,6 +3,250 @@
 part of 'app_database.dart';
 
 // ignore_for_file: type=lint
+class $FoldersTable extends Folders with TableInfo<$FoldersTable, Folder> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FoldersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameKeyMeta = const VerificationMeta(
+    'nameKey',
+  );
+  @override
+  late final GeneratedColumn<String> nameKey = GeneratedColumn<String>(
+    'name_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, nameKey];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'folders';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Folder> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('name_key')) {
+      context.handle(
+        _nameKeyMeta,
+        nameKey.isAcceptableOrUnknown(data['name_key']!, _nameKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameKeyMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Folder map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Folder(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      nameKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name_key'],
+      )!,
+    );
+  }
+
+  @override
+  $FoldersTable createAlias(String alias) {
+    return $FoldersTable(attachedDatabase, alias);
+  }
+}
+
+class Folder extends DataClass implements Insertable<Folder> {
+  final int id;
+  final String name;
+  final String nameKey;
+  const Folder({required this.id, required this.name, required this.nameKey});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['name_key'] = Variable<String>(nameKey);
+    return map;
+  }
+
+  FoldersCompanion toCompanion(bool nullToAbsent) {
+    return FoldersCompanion(
+      id: Value(id),
+      name: Value(name),
+      nameKey: Value(nameKey),
+    );
+  }
+
+  factory Folder.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Folder(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      nameKey: serializer.fromJson<String>(json['nameKey']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'nameKey': serializer.toJson<String>(nameKey),
+    };
+  }
+
+  Folder copyWith({int? id, String? name, String? nameKey}) => Folder(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    nameKey: nameKey ?? this.nameKey,
+  );
+  Folder copyWithCompanion(FoldersCompanion data) {
+    return Folder(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      nameKey: data.nameKey.present ? data.nameKey.value : this.nameKey,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Folder(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('nameKey: $nameKey')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, nameKey);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Folder &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.nameKey == this.nameKey);
+}
+
+class FoldersCompanion extends UpdateCompanion<Folder> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<String> nameKey;
+  const FoldersCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.nameKey = const Value.absent(),
+  });
+  FoldersCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    required String nameKey,
+  }) : name = Value(name),
+       nameKey = Value(nameKey);
+  static Insertable<Folder> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? nameKey,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (nameKey != null) 'name_key': nameKey,
+    });
+  }
+
+  FoldersCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<String>? nameKey,
+  }) {
+    return FoldersCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      nameKey: nameKey ?? this.nameKey,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (nameKey.present) {
+      map['name_key'] = Variable<String>(nameKey.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FoldersCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('nameKey: $nameKey')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $MemoriesTable extends Memories with TableInfo<$MemoriesTable, Memory> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -110,6 +354,20 @@ class $MemoriesTable extends Memories with TableInfo<$MemoriesTable, Memory> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _folderIdMeta = const VerificationMeta(
+    'folderId',
+  );
+  @override
+  late final GeneratedColumn<int> folderId = GeneratedColumn<int>(
+    'folder_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES folders (id) ON DELETE SET NULL',
+    ),
+  );
   static const VerificationMeta _reminderAtMeta = const VerificationMeta(
     'reminderAt',
   );
@@ -132,6 +390,7 @@ class $MemoriesTable extends Memories with TableInfo<$MemoriesTable, Memory> {
     favourite,
     createdAt,
     updatedAt,
+    folderId,
     reminderAt,
   ];
   @override
@@ -199,6 +458,12 @@ class $MemoriesTable extends Memories with TableInfo<$MemoriesTable, Memory> {
         updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
       );
     }
+    if (data.containsKey('folder_id')) {
+      context.handle(
+        _folderIdMeta,
+        folderId.isAcceptableOrUnknown(data['folder_id']!, _folderIdMeta),
+      );
+    }
     if (data.containsKey('reminder_at')) {
       context.handle(
         _reminderAtMeta,
@@ -250,6 +515,10 @@ class $MemoriesTable extends Memories with TableInfo<$MemoriesTable, Memory> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       ),
+      folderId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}folder_id'],
+      ),
       reminderAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}reminder_at'],
@@ -273,6 +542,7 @@ class Memory extends DataClass implements Insertable<Memory> {
   final bool favourite;
   final DateTime createdAt;
   final DateTime? updatedAt;
+  final int? folderId;
   final DateTime? reminderAt;
   const Memory({
     required this.id,
@@ -284,6 +554,7 @@ class Memory extends DataClass implements Insertable<Memory> {
     required this.favourite,
     required this.createdAt,
     this.updatedAt,
+    this.folderId,
     this.reminderAt,
   });
   @override
@@ -307,6 +578,9 @@ class Memory extends DataClass implements Insertable<Memory> {
     map['created_at'] = Variable<DateTime>(createdAt);
     if (!nullToAbsent || updatedAt != null) {
       map['updated_at'] = Variable<DateTime>(updatedAt);
+    }
+    if (!nullToAbsent || folderId != null) {
+      map['folder_id'] = Variable<int>(folderId);
     }
     if (!nullToAbsent || reminderAt != null) {
       map['reminder_at'] = Variable<DateTime>(reminderAt);
@@ -333,6 +607,9 @@ class Memory extends DataClass implements Insertable<Memory> {
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(updatedAt),
+      folderId: folderId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(folderId),
       reminderAt: reminderAt == null && nullToAbsent
           ? const Value.absent()
           : Value(reminderAt),
@@ -354,6 +631,7 @@ class Memory extends DataClass implements Insertable<Memory> {
       favourite: serializer.fromJson<bool>(json['favourite']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
+      folderId: serializer.fromJson<int?>(json['folderId']),
       reminderAt: serializer.fromJson<DateTime?>(json['reminderAt']),
     );
   }
@@ -370,6 +648,7 @@ class Memory extends DataClass implements Insertable<Memory> {
       'favourite': serializer.toJson<bool>(favourite),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
+      'folderId': serializer.toJson<int?>(folderId),
       'reminderAt': serializer.toJson<DateTime?>(reminderAt),
     };
   }
@@ -384,6 +663,7 @@ class Memory extends DataClass implements Insertable<Memory> {
     bool? favourite,
     DateTime? createdAt,
     Value<DateTime?> updatedAt = const Value.absent(),
+    Value<int?> folderId = const Value.absent(),
     Value<DateTime?> reminderAt = const Value.absent(),
   }) => Memory(
     id: id ?? this.id,
@@ -395,6 +675,7 @@ class Memory extends DataClass implements Insertable<Memory> {
     favourite: favourite ?? this.favourite,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
+    folderId: folderId.present ? folderId.value : this.folderId,
     reminderAt: reminderAt.present ? reminderAt.value : this.reminderAt,
   );
   Memory copyWithCompanion(MemoriesCompanion data) {
@@ -408,6 +689,7 @@ class Memory extends DataClass implements Insertable<Memory> {
       favourite: data.favourite.present ? data.favourite.value : this.favourite,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      folderId: data.folderId.present ? data.folderId.value : this.folderId,
       reminderAt: data.reminderAt.present
           ? data.reminderAt.value
           : this.reminderAt,
@@ -426,6 +708,7 @@ class Memory extends DataClass implements Insertable<Memory> {
           ..write('favourite: $favourite, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('folderId: $folderId, ')
           ..write('reminderAt: $reminderAt')
           ..write(')'))
         .toString();
@@ -442,6 +725,7 @@ class Memory extends DataClass implements Insertable<Memory> {
     favourite,
     createdAt,
     updatedAt,
+    folderId,
     reminderAt,
   );
   @override
@@ -457,6 +741,7 @@ class Memory extends DataClass implements Insertable<Memory> {
           other.favourite == this.favourite &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
+          other.folderId == this.folderId &&
           other.reminderAt == this.reminderAt);
 }
 
@@ -470,6 +755,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
   final Value<bool> favourite;
   final Value<DateTime> createdAt;
   final Value<DateTime?> updatedAt;
+  final Value<int?> folderId;
   final Value<DateTime?> reminderAt;
   const MemoriesCompanion({
     this.id = const Value.absent(),
@@ -481,6 +767,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
     this.favourite = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.folderId = const Value.absent(),
     this.reminderAt = const Value.absent(),
   });
   MemoriesCompanion.insert({
@@ -493,6 +780,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
     this.favourite = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.folderId = const Value.absent(),
     this.reminderAt = const Value.absent(),
   }) : title = Value(title);
   static Insertable<Memory> custom({
@@ -505,6 +793,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
     Expression<bool>? favourite,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<int>? folderId,
     Expression<DateTime>? reminderAt,
   }) {
     return RawValuesInsertable({
@@ -517,6 +806,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
       if (favourite != null) 'favourite': favourite,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (folderId != null) 'folder_id': folderId,
       if (reminderAt != null) 'reminder_at': reminderAt,
     });
   }
@@ -531,6 +821,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
     Value<bool>? favourite,
     Value<DateTime>? createdAt,
     Value<DateTime?>? updatedAt,
+    Value<int?>? folderId,
     Value<DateTime?>? reminderAt,
   }) {
     return MemoriesCompanion(
@@ -543,6 +834,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
       favourite: favourite ?? this.favourite,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      folderId: folderId ?? this.folderId,
       reminderAt: reminderAt ?? this.reminderAt,
     );
   }
@@ -577,6 +869,9 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (folderId.present) {
+      map['folder_id'] = Variable<int>(folderId.value);
+    }
     if (reminderAt.present) {
       map['reminder_at'] = Variable<DateTime>(reminderAt.value);
     }
@@ -595,6 +890,7 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
           ..write('favourite: $favourite, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('folderId: $folderId, ')
           ..write('reminderAt: $reminderAt')
           ..write(')'))
         .toString();
@@ -604,14 +900,268 @@ class MemoriesCompanion extends UpdateCompanion<Memory> {
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
+  late final $FoldersTable folders = $FoldersTable(this);
   late final $MemoriesTable memories = $MemoriesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [memories];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [folders, memories];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'folders',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('memories', kind: UpdateKind.update)],
+    ),
+  ]);
 }
 
+typedef $$FoldersTableCreateCompanionBuilder =
+    FoldersCompanion Function({
+      Value<int> id,
+      required String name,
+      required String nameKey,
+    });
+typedef $$FoldersTableUpdateCompanionBuilder =
+    FoldersCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<String> nameKey,
+    });
+
+final class $$FoldersTableReferences
+    extends BaseReferences<_$AppDatabase, $FoldersTable, Folder> {
+  $$FoldersTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$MemoriesTable, List<Memory>> _memoriesRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.memories,
+    aliasName: 'folders__id__memories__folder_id',
+  );
+
+  $$MemoriesTableProcessedTableManager get memoriesRefs {
+    final manager = $$MemoriesTableTableManager(
+      $_db,
+      $_db.memories,
+    ).filter((f) => f.folderId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_memoriesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$FoldersTableFilterComposer
+    extends Composer<_$AppDatabase, $FoldersTable> {
+  $$FoldersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nameKey => $composableBuilder(
+    column: $table.nameKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> memoriesRefs(
+    Expression<bool> Function($$MemoriesTableFilterComposer f) f,
+  ) {
+    final $$MemoriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.memories,
+      getReferencedColumn: (t) => t.folderId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MemoriesTableFilterComposer(
+            $db: $db,
+            $table: $db.memories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$FoldersTableOrderingComposer
+    extends Composer<_$AppDatabase, $FoldersTable> {
+  $$FoldersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nameKey => $composableBuilder(
+    column: $table.nameKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FoldersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FoldersTable> {
+  $$FoldersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get nameKey =>
+      $composableBuilder(column: $table.nameKey, builder: (column) => column);
+
+  Expression<T> memoriesRefs<T extends Object>(
+    Expression<T> Function($$MemoriesTableAnnotationComposer a) f,
+  ) {
+    final $$MemoriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.memories,
+      getReferencedColumn: (t) => t.folderId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MemoriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.memories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$FoldersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FoldersTable,
+          Folder,
+          $$FoldersTableFilterComposer,
+          $$FoldersTableOrderingComposer,
+          $$FoldersTableAnnotationComposer,
+          $$FoldersTableCreateCompanionBuilder,
+          $$FoldersTableUpdateCompanionBuilder,
+          (Folder, $$FoldersTableReferences),
+          Folder,
+          PrefetchHooks Function({bool memoriesRefs})
+        > {
+  $$FoldersTableTableManager(_$AppDatabase db, $FoldersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FoldersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FoldersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FoldersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> nameKey = const Value.absent(),
+              }) => FoldersCompanion(id: id, name: name, nameKey: nameKey),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                required String nameKey,
+              }) =>
+                  FoldersCompanion.insert(id: id, name: name, nameKey: nameKey),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$FoldersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({memoriesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (memoriesRefs) db.memories],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (memoriesRefs)
+                    await $_getPrefetchedData<Folder, $FoldersTable, Memory>(
+                      currentTable: table,
+                      referencedTable: $$FoldersTableReferences
+                          ._memoriesRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$FoldersTableReferences(db, table, p0).memoriesRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.folderId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$FoldersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FoldersTable,
+      Folder,
+      $$FoldersTableFilterComposer,
+      $$FoldersTableOrderingComposer,
+      $$FoldersTableAnnotationComposer,
+      $$FoldersTableCreateCompanionBuilder,
+      $$FoldersTableUpdateCompanionBuilder,
+      (Folder, $$FoldersTableReferences),
+      Folder,
+      PrefetchHooks Function({bool memoriesRefs})
+    >;
 typedef $$MemoriesTableCreateCompanionBuilder =
     MemoriesCompanion Function({
       Value<int> id,
@@ -623,6 +1173,7 @@ typedef $$MemoriesTableCreateCompanionBuilder =
       Value<bool> favourite,
       Value<DateTime> createdAt,
       Value<DateTime?> updatedAt,
+      Value<int?> folderId,
       Value<DateTime?> reminderAt,
     });
 typedef $$MemoriesTableUpdateCompanionBuilder =
@@ -636,8 +1187,31 @@ typedef $$MemoriesTableUpdateCompanionBuilder =
       Value<bool> favourite,
       Value<DateTime> createdAt,
       Value<DateTime?> updatedAt,
+      Value<int?> folderId,
       Value<DateTime?> reminderAt,
     });
+
+final class $$MemoriesTableReferences
+    extends BaseReferences<_$AppDatabase, $MemoriesTable, Memory> {
+  $$MemoriesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $FoldersTable _folderIdTable(_$AppDatabase db) =>
+      db.folders.createAlias('memories__folder_id__folders__id');
+
+  $$FoldersTableProcessedTableManager? get folderId {
+    final $_column = $_itemColumn<int>('folder_id');
+    if ($_column == null) return null;
+    final manager = $$FoldersTableTableManager(
+      $_db,
+      $_db.folders,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_folderIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
 
 class $$MemoriesTableFilterComposer
     extends Composer<_$AppDatabase, $MemoriesTable> {
@@ -697,6 +1271,29 @@ class $$MemoriesTableFilterComposer
     column: $table.reminderAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  $$FoldersTableFilterComposer get folderId {
+    final $$FoldersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.folderId,
+      referencedTable: $db.folders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FoldersTableFilterComposer(
+            $db: $db,
+            $table: $db.folders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$MemoriesTableOrderingComposer
@@ -757,6 +1354,29 @@ class $$MemoriesTableOrderingComposer
     column: $table.reminderAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  $$FoldersTableOrderingComposer get folderId {
+    final $$FoldersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.folderId,
+      referencedTable: $db.folders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FoldersTableOrderingComposer(
+            $db: $db,
+            $table: $db.folders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$MemoriesTableAnnotationComposer
@@ -799,6 +1419,29 @@ class $$MemoriesTableAnnotationComposer
     column: $table.reminderAt,
     builder: (column) => column,
   );
+
+  $$FoldersTableAnnotationComposer get folderId {
+    final $$FoldersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.folderId,
+      referencedTable: $db.folders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FoldersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.folders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$MemoriesTableTableManager
@@ -812,9 +1455,9 @@ class $$MemoriesTableTableManager
           $$MemoriesTableAnnotationComposer,
           $$MemoriesTableCreateCompanionBuilder,
           $$MemoriesTableUpdateCompanionBuilder,
-          (Memory, BaseReferences<_$AppDatabase, $MemoriesTable, Memory>),
+          (Memory, $$MemoriesTableReferences),
           Memory,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool folderId})
         > {
   $$MemoriesTableTableManager(_$AppDatabase db, $MemoriesTable table)
     : super(
@@ -838,6 +1481,7 @@ class $$MemoriesTableTableManager
                 Value<bool> favourite = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
+                Value<int?> folderId = const Value.absent(),
                 Value<DateTime?> reminderAt = const Value.absent(),
               }) => MemoriesCompanion(
                 id: id,
@@ -849,6 +1493,7 @@ class $$MemoriesTableTableManager
                 favourite: favourite,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                folderId: folderId,
                 reminderAt: reminderAt,
               ),
           createCompanionCallback:
@@ -862,6 +1507,7 @@ class $$MemoriesTableTableManager
                 Value<bool> favourite = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
+                Value<int?> folderId = const Value.absent(),
                 Value<DateTime?> reminderAt = const Value.absent(),
               }) => MemoriesCompanion.insert(
                 id: id,
@@ -873,12 +1519,58 @@ class $$MemoriesTableTableManager
                 favourite: favourite,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                folderId: folderId,
                 reminderAt: reminderAt,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$MemoriesTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({folderId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (folderId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.folderId,
+                                referencedTable: $$MemoriesTableReferences
+                                    ._folderIdTable(db),
+                                referencedColumn: $$MemoriesTableReferences
+                                    ._folderIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
         ),
       );
 }
@@ -893,14 +1585,16 @@ typedef $$MemoriesTableProcessedTableManager =
       $$MemoriesTableAnnotationComposer,
       $$MemoriesTableCreateCompanionBuilder,
       $$MemoriesTableUpdateCompanionBuilder,
-      (Memory, BaseReferences<_$AppDatabase, $MemoriesTable, Memory>),
+      (Memory, $$MemoriesTableReferences),
       Memory,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool folderId})
     >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
+  $$FoldersTableTableManager get folders =>
+      $$FoldersTableTableManager(_db, _db.folders);
   $$MemoriesTableTableManager get memories =>
       $$MemoriesTableTableManager(_db, _db.memories);
 }

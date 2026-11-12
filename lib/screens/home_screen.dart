@@ -17,6 +17,7 @@ import 'add_memory_screen.dart';
 import 'memory_detail_screen.dart';
 import 'quick_note_screen.dart';
 import 'settings_screen.dart';
+import 'folders_screen.dart';
 
 enum MemorySort {
   newest,
@@ -272,6 +273,14 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('MemoryLens'),
         actions: [
+          IconButton(
+            tooltip: 'Folders',
+            icon: const Icon(Icons.folder_outlined),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(builder: (_) => const FoldersScreen()),
+            ),
+          ),
           PopupMenuButton<MemorySort>(
             tooltip: 'Sort',
             icon: const Icon(Icons.sort),
